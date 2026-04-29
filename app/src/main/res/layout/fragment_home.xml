@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#121212"
+    android:fillViewport="true"> <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <include layout="@layout/layout_home_header" />
+
+    <TextView
+        style="@style/SectionTitle"
+        android:text="Album nổi tiếng" />
+    <include layout="@layout/layout_home_albums" />
+
+    <TextView
+        style="@style/SectionTitle"
+        android:text="Bảng xếp hạng" />
+    <include layout="@layout/layout_home_charts" />
+
+    <TextView
+        style="@style/SectionTitle"
+        android:text="Nghệ sĩ phổ biến" />
+    <include layout="@layout/layout_home_artists" />
+
+    <TextView
+        style="@style/SectionTitle"
+        android:text="Khám phá các thể loại" />
+    <include layout="@layout/layout_home_categories" />
+
+</LinearLayout>
+</ScrollView>
