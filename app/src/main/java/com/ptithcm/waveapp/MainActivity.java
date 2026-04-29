@@ -16,14 +16,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Kiểm tra nếu lần đầu chạy app thì load HomeFragment vào
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, new HomeFragment())
                     .commit();
         }
 
-        // Xử lý bấm vào Bottom Navigation để chuyển trang
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
@@ -31,9 +29,7 @@ public class MainActivity extends AppCompatActivity {
             if (item.getItemId() == R.id.nav_home) {
                 selectedFragment = new HomeFragment();
             } else if (item.getItemId() == R.id.nav_search) {
-                // selectedFragment = new SearchFragment(); (Nếu bà đã tạo)
             } else if (item.getItemId() == R.id.nav_library) {
-                // selectedFragment = new LibraryFragment(); (Nếu bà đã tạo)
             }
 
             if (selectedFragment != null) {

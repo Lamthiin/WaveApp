@@ -9,9 +9,6 @@
     android:paddingEnd="16dp"
     android:orientation="horizontal">
 
-    <!-- Logo Spotify bên trái -->
-
-    <!-- Nút Tất cả -->
     <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/img_logo"
         android:layout_width="32dp"
@@ -33,7 +30,6 @@
         android:textSize="13sp"
         android:textStyle="bold"/>
 
-    <!-- Nút Nhạc -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
