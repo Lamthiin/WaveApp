@@ -12,6 +12,24 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WaveApp">
         <activity
+            android:name=".UserProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SongsByCategoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AllCategoriesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AddSongsToPlaylistActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PlaylistDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MyPlaylistsActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

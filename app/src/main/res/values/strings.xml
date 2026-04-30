@@ -29,4 +29,6 @@
     <string name="share">Share</string>
     <string name="queue">Queue</string>
     <string name="lyrics_preview">Lyrics preview</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
