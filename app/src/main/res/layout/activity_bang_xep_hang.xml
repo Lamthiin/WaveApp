@@ -102,33 +102,9 @@
             android:paddingTop="16dp"
             android:paddingBottom="4dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                tools:ignore="UseCompoundDrawables">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@drawable/ic_logo"
-                    android:contentDescription="@null" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/spotify"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:textSize="13sp" />
-            </LinearLayout>
-
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
                 android:text="@string/playlist_info"
                 android:textColor="#B3B3B3"
                 android:textSize="12sp" />

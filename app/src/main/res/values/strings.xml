@@ -1,6 +1,6 @@
 <resources>
     <string name="app_name">WaveApp</string>
-    <string name="artist_name">Sơn Tùng M-TP</string>
+    <string name="artist_name_st">Sơn Tùng M-TP</string>
     <string name="monthly_listeners">1,9 tr người nghe hằng tháng</string>
     <string name="follow">Theo dõi</string>
     <string name="shuffle">Shuffle</string>
@@ -14,4 +14,19 @@
     <string name="add_to_library">Thêm vào thư viện</string>
     <string name="playlist_info">186.787 lượt lưu - 3 giờ 19 phút</string>
     <string name="spotify">Spotify</string>
+
+    <!-- Info Song Strings -->
+    <string name="liked_songs">Songs</string>
+    <string name="more">More</string>
+    <string name="song_title_sample">Call Out My Name</string>
+    <string name="artist_name_sample">The Weeknd</string>
+    <string name="current_time_sample">0:13</string>
+    <string name="total_time_sample">-3:34</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="sleep_timer">Sleep Timer</string>
+    <string name="connect_device">Connect to device</string>
+    <string name="share">Share</string>
+    <string name="queue">Queue</string>
+    <string name="lyrics_preview">Lyrics preview</string>
 </resources>
