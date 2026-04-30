@@ -7,4 +7,11 @@
     <string name="play">Play</string>
     <string name="popular">Phổ biến</string>
     <string name="artist_image">Ảnh nghệ sĩ</string>
+    <string name="back">Back</string>
+    <string name="search_hint">Tìm trên trang này</string>
+    <string name="sort">Sắp xếp</string>
+    <string name="playlist_art">Ảnh bìa danh sách</string>
+    <string name="add_to_library">Thêm vào thư viện</string>
+    <string name="playlist_info">186.787 lượt lưu - 3 giờ 19 phút</string>
+    <string name="spotify">Spotify</string>
 </resources>
