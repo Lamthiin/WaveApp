@@ -155,7 +155,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:nestedScrollingEnabled="false"
-            tools:listitem="@layout/item_popular_song"
+            tools:listitem="@layout/item_item_song"
             tools:itemCount="8" />
 
     </LinearLayout>
