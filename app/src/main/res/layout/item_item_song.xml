@@ -64,7 +64,7 @@
         android:contentDescription="Song options"
         android:padding="2dp"
         android:scaleType="centerInside"
-        android:src="@android:drawable/ic_menu_moreoverflow_normal_holo_dark"
+        android:src="@drawable/ic_more_vert"
         app:tint="#B3B3B3" />
 
 </LinearLayout>

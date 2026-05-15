@@ -29,7 +29,9 @@ public class MainActivity extends AppCompatActivity {
             if (item.getItemId() == R.id.nav_home) {
                 selectedFragment = new HomeFragment();
             } else if (item.getItemId() == R.id.nav_search) {
+                selectedFragment = new SearchFragment();
             } else if (item.getItemId() == R.id.nav_library) {
+                selectedFragment = new LibraryFragment();
             }
 
             if (selectedFragment != null) {

@@ -81,7 +81,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                android:src="@drawable/hothit_vietnam" />
+                android:src="@drawable/ic_music_note" />
         </com.google.android.material.card.MaterialCardView>
 
         <!-- 3. Thông tin người tạo và chỉ số -->

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "177509917673",
+    "project_id": "waveapp-8afdf",
+    "storage_bucket": "waveapp-8afdf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:177509917673:android:2049a5ff75645300c4e178",
+        "android_client_info": {
+          "package_name": "com.ptit.waveapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDL04gQGuMVEbF1DJGoOpfv3kvceMecMZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
