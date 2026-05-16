@@ -67,7 +67,7 @@ public class MusicPlayerActivity extends AppCompatActivity {
             
             ImageFileHelper.loadIntoImageView(this, currentSong.getImage(), ivAlbumArt, R.drawable.ic_music_note);
             
-            String musicUrl = DatabaseHelper.getFirebaseStorageUrl(currentSong.getUrl());
+            String musicUrl = currentSong.getUrl();
             prepareMediaPlayer(musicUrl);
         }
     }
