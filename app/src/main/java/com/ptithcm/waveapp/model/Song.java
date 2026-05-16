@@ -1,10 +1,11 @@
 package com.ptithcm.waveapp.model;
 
 import lombok.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Song {
+public class Song implements Serializable {
     private String id;
     private String name;
     private Artist artist;
@@ -18,4 +19,6 @@ public class Song {
     @Builder.Default private long likeCount = 0;
     @Builder.Default private boolean active = true;
     private LocalDateTime createdAt;
+
+
 }

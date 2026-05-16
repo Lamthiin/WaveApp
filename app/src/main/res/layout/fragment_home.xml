@@ -1,37 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212"
-    android:fillViewport="true">
-    <LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#121212">
 
-    <include layout="@layout/layout_home_header" />
+    <!-- Header được ghim cố định ở trên cùng -->
+    <include
+        android:id="@+id/header_layout"
+        layout="@layout/layout_home_header" />
 
-    <TextView
-        style="@style/SectionTitle"
-        android:text="Album nổi tiếng" />
-    <include layout="@layout/layout_home_albums" />
+    <!-- Nội dung bên dưới có thể cuộn, nằm dưới header -->
+    <ScrollView
+        android:id="@+id/home_scroll_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header_layout"
+        android:fillViewport="true">
 
-    <TextView
-        style="@style/SectionTitle"
-        android:text="Bảng xếp hạng" />
-    <include layout="@layout/layout_home_charts" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    <TextView
-        style="@style/SectionTitle"
-        android:text="Nghệ sĩ phổ biến" />
-    <include layout="@layout/layout_home_artists" />
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Album nổi tiếng" />
 
-    <TextView
-        style="@style/SectionTitle"
-        android:text="Khám phá các thể loại" />
-    <include layout="@layout/layout_home_categories" />
+            <include layout="@layout/layout_home_albums" />
 
-</LinearLayout>
-</ScrollView>
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Bảng xếp hạng" />
+
+            <include layout="@layout/layout_home_charts" />
+
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Nghệ sĩ phổ biến" />
+
+            <include layout="@layout/layout_home_artists" />
+
+            <TextView
+                style="@style/SectionTitle"
+                android:text="Khám phá các thể loại" />
+
+            <include layout="@layout/layout_home_categories" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Danh sách bài hát khi chọn tab Nhạc (ẩn mặc định) -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_all_songs"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/header_layout"
+        android:padding="16dp"
+        android:visibility="gone" />
+</RelativeLayout>

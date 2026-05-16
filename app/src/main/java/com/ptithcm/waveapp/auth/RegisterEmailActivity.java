@@ -2,103 +2,122 @@ package com.ptithcm.waveapp.auth;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.ptithcm.waveapp.R;
-import com.ptithcm.waveapp.config.ServiceLocator;
-import com.ptithcm.waveapp.controller.AuthController;
-import com.ptithcm.waveapp.dto.request.RegisterRequest;
+import com.ptithcm.waveapp.database.DatabaseHelper;
+import com.ptithcm.waveapp.repository.UserRepository;
+import com.ptithcm.waveapp.service.AuthService;
+import com.ptithcm.waveapp.util.EmailHelper;
+import com.ptithcm.waveapp.util.PasswordValidator;
+import com.ptithcm.waveapp.util.TokenManager;
 
 public class RegisterEmailActivity extends AppCompatActivity {
 
-    private AuthController authController;
-    private FirebaseAuth mAuth;
-    private EditText etEmail, etPassword, etConfirmPassword;
-    private static final String TAG = "RegisterEmailActivity";
+    private EditText       etEmail, etPassword, etConfirmPassword;
+    private MaterialButton btnNext;
+    private ProgressBar    progressBar;
+    private AuthService    authService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register_email);
 
-        authController = ServiceLocator.getInstance().getAuthController();
-        mAuth = FirebaseAuth.getInstance();
+        try {
+            DatabaseHelper dbHelper   = DatabaseHelper.getInstance(this);
+            UserRepository userRepo   = new UserRepository(dbHelper);
+            TokenManager tokenManager = new TokenManager(this);
+            authService = new AuthService(userRepo, tokenManager);
 
-        etEmail = findViewById(R.id.et_email);
-        etPassword = findViewById(R.id.et_password);
-        etConfirmPassword = findViewById(R.id.et_confirm_password);
-        MaterialButton btnNext = findViewById(R.id.btn_next);
-        ImageButton btnBack = findViewById(R.id.btn_back);
+            etEmail           = findViewById(R.id.et_email);
+            etPassword        = findViewById(R.id.et_new_password);
+            etConfirmPassword = findViewById(R.id.et_confirm_new_password);
+            btnNext           = findViewById(R.id.btn_next);
+            progressBar       = findViewById(R.id.progressBar);
 
-        btnBack.setOnClickListener(v -> finish());
-
-        btnNext.setOnClickListener(v -> {
-            String email = etEmail.getText().toString();
-            String password = etPassword.getText().toString();
-            String confirmPassword = etConfirmPassword.getText().toString();
-
-            if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                Toast.makeText(this, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show();
-                return;
+            ImageButton btnBack = findViewById(R.id.btn_back);
+            if (btnBack != null) {
+                btnBack.setOnClickListener(v -> finish());
             }
 
-            if (!password.equals(confirmPassword)) {
-                Toast.makeText(this, "Mật khẩu xác nhận không khớp", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            btnNext.setOnClickListener(v -> {
+                String email    = etEmail.getText().toString().trim();
+                String password = etPassword.getText().toString().trim();
+                String confirm  = etConfirmPassword.getText().toString().trim();
 
-            // Đăng ký với Firebase
-            mAuth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener(this, task -> {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "createUserWithEmail:success");
-                            FirebaseUser user = mAuth.getCurrentUser();
-                            if (user != null) {
-                                sendVerificationEmail(user, password);
-                            }
-                        } else {
-                            Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                            Toast.makeText(RegisterEmailActivity.this, "Đăng ký thất bại: " + task.getException().getMessage(),
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    });
-        });
+                if (email.isEmpty())           { etEmail.setError("Vui lòng nhập email"); return; }
+                if (!email.contains("@"))      { etEmail.setError("Email không hợp lệ"); return; }
+                if (!PasswordValidator.isValid(password)) {
+                    etPassword.setError(PasswordValidator.getErrorMessage());
+                    return;
+                }
+                if (!password.equals(confirm)) { etConfirmPassword.setError("Mật khẩu không khớp"); return; }
+
+                register(email, password, confirm);
+            });
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Lỗi khởi tạo giao diện: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
     }
 
-    private void sendVerificationEmail(FirebaseUser user, String password) {
-        user.sendEmailVerification()
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Toast.makeText(RegisterEmailActivity.this,
-                                "Link xác thực đã được gửi tới " + user.getEmail(),
-                                Toast.LENGTH_LONG).show();
-                        
-                        // Lưu thông tin vào local mock (để đồng bộ hệ thống hiện tại)
-                        RegisterRequest request = new RegisterRequest();
-                        request.setEmail(user.getEmail());
-                        request.setPassword(password);
-                        request.setConfirmPassword(password);
-                        request.setName(user.getEmail().split("@")[0]);
-                        request.setUsername(user.getEmail().split("@")[0]);
-                        authController.registerEmail(request); // Chỉ để lưu vào pendingUsers
+    private void register(String email, String password, String confirm) {
+        setLoading(true);
 
-                        // Chuyển hướng về Login và nhắc người dùng check mail
-                        Intent intent = new Intent(this, LoginActivity.class);
-                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        new Thread(() -> {
+            try {
+                String username = email.split("@")[0];
+
+                // 1. Lưu pending + tạo OTP vào Database local
+                authService.registerWithEmail(username, username, email, password, confirm);
+
+                // 2. Lấy OTP vừa tạo từ Database
+                String otp = authService.getOtp(email);
+
+                // 3. Gửi OTP về email thật (Đã bọc kiểm tra an toàn)
+                boolean sent = false;
+                try {
+                    sent = EmailHelper.sendOtp(email, otp);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                final boolean isSent = sent;
+                runOnUiThread(() -> {
+                    setLoading(false);
+                    if (isSent) {
+                        Toast.makeText(this, "Mã OTP đã gửi tới " + email, Toast.LENGTH_LONG).show();
+
+                        // Chỉ chuyển màn hình khi đã gửi mail thành công hoàn toàn
+                        Intent intent = new Intent(this, OtpVerificationActivity.class);
+                        intent.putExtra("EMAIL", email);
+                        intent.putExtra("SEND_TIME", System.currentTimeMillis());
                         startActivity(intent);
-                        finish();
                     } else {
-                        Log.e(TAG, "sendEmailVerification", task.getException());
-                        Toast.makeText(RegisterEmailActivity.this,
-                                "Không thể gửi mail xác thực.",
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Không gửi được email. Vui lòng kiểm tra cấu hình SMTP hoặc App Password!", Toast.LENGTH_LONG).show();
                     }
                 });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                runOnUiThread(() -> {
+                    setLoading(false);
+                    Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
+    }
+
+    private void setLoading(boolean loading) {
+        if (btnNext != null) btnNext.setEnabled(!loading);
+        if (progressBar != null)
+            progressBar.setVisibility(loading ? View.VISIBLE : View.GONE);
     }
 }

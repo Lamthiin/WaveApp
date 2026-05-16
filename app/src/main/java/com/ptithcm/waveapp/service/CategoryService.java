@@ -1,51 +1,38 @@
 package com.ptithcm.waveapp.service;
 
-import com.ptithcm.waveapp.dto.response.*;
-import com.ptithcm.waveapp.exception.ResourceNotFoundException;
-import com.ptithcm.waveapp.model.*;
-import com.ptithcm.waveapp.repository.*;
-import lombok.RequiredArgsConstructor;
-
+import com.ptithcm.waveapp.model.Genre;
+import com.ptithcm.waveapp.model.Song;
+import com.ptithcm.waveapp.repository.GenreRepository;
+import com.ptithcm.waveapp.repository.SongRepository;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 /**
- * Xử lý:
- *   - AllCategoriesActivity.java    → getAllCategories()
- *   - SongsByCategoryActivity.java  → getSongsByCategory()
+ * AllCategoriesActivity → getAllCategories()
+ * SongsByCategoryActivity → getSongsByCategory()
  */
-@RequiredArgsConstructor
 public class CategoryService {
 
     private final GenreRepository genreRepo;
     private final SongRepository  songRepo;
 
-    /** AllCategoriesActivity – hiển thị lưới tất cả thể loại */
-    public List<GenreResponse> getAllCategories() {
-        return genreRepo.findAll().stream()
-                .map(g -> GenreResponse.builder()
-                        .id(g.getId()).name(g.getName())
-                        .description(g.getDescription()).imageUrl(g.getImageUrl())
-                        .songCount(0)
-                        .build())
-                .collect(Collectors.toList());
+    public CategoryService(GenreRepository genreRepo, SongRepository songRepo) {
+        this.genreRepo = genreRepo;
+        this.songRepo  = songRepo;
     }
 
-    /** SongsByCategoryActivity – danh sách bài hát theo thể loại */
-    public List<SongResponse> getSongsByCategory(String genreId) {
-        Genre genre = genreRepo.findById(genreId)
-                .orElseThrow(() -> new ResourceNotFoundException("Thể loại không tồn tại"));
+    /** AllCategoriesActivity: lưới tất cả thể loại */
+    public List<Genre> getAllCategories() {
+        return genreRepo.findAll();
+    }
 
-        return songRepo.findByActiveTrue().stream()
-                .map(s -> SongResponse.builder()
-                        .id(s.getId()).name(s.getName())
-                        .artistId(s.getArtist().getId()).artistName(s.getArtist().getName())
-                        .albumId(s.getAlbum() != null ? s.getAlbum().getId() : null)
-                        .albumName(s.getAlbum() != null ? s.getAlbum().getName() : null)
-                        .genreId(genre.getId()).genreName(genre.getName())
-                        .duration(s.getDuration()).url(s.getUrl()).image(s.getImage())
-                        .playCount(s.getPlayCount()).likeCount(s.getLikeCount())
-                        .build())
-                .collect(Collectors.toList());
+    /** SongsByCategoryActivity: bài hát theo thể loại */
+    public List<Song> getSongsByCategory(String genreId) {
+        // Kiểm tra thể loại có tồn tại không
+        genreRepo.findById(genreId)
+                .orElseThrow(() -> new RuntimeException("Thể loại không tồn tại"));
+
+        // FIX 3: findByActiveTrue() lấy TẤT CẢ bài → phải dùng findByGenreIdAndActiveTrue()
+        return songRepo.findByGenreIdAndActiveTrue(genreId);
     }
 }

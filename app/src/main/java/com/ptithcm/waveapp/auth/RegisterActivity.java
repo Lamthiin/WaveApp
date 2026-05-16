@@ -14,20 +14,19 @@ public class RegisterActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        MaterialButton btnContinueEmail = findViewById(R.id.btn_continue_email);
-        MaterialButton btnContinueGoogle = findViewById(R.id.btn_continue_google);
-        TextView tvLoginLink = findViewById(R.id.tv_register_link); // In XML it's labeled tv_register_link but used for "Đăng nhập" here
+        MaterialButton btnEmail  = findViewById(R.id.btn_continue_email);
+        MaterialButton btnGoogle = findViewById(R.id.btn_continue_google);
+        TextView tvLogin         = findViewById(R.id.tv_register_link);
 
-        btnContinueEmail.setOnClickListener(v -> {
-            startActivity(new Intent(RegisterActivity.this, RegisterEmailActivity.class));
+        btnEmail.setOnClickListener(v ->
+            startActivity(new Intent(this, RegisterEmailActivity.class))
+        );
+
+        btnGoogle.setOnClickListener(v -> {
+            // TODO: tích hợp Google Sign-In SDK nếu cần
         });
 
-        btnContinueGoogle.setOnClickListener(v -> {
-            // Logic Google Register
-        });
-
-        tvLoginLink.setOnClickListener(v -> {
-            finish();
-        });
+        // Quay lại màn đăng nhập
+        tvLogin.setOnClickListener(v -> finish());
     }
 }

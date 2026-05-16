@@ -12,7 +12,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.ptit.waveapp"
+        applicationId "com.ptithcm.waveapp"
         minSdk 27
         targetSdk 36
         versionCode 1
@@ -30,6 +30,14 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+    }
+
+    packaging {
+        resources {
+            excludes += '/META-INF/NOTICE.md'
+            excludes += '/META-INF/LICENSE.md'
+            excludes += '/META-INF/DEPENDENCIES'
+        }
     }
 }
 
@@ -49,16 +57,25 @@ dependencies {
     androidTestImplementation libs.espresso.core
 
     // Firebase
-    implementation platform('com.google.firebase:firebase-bom:32.7.0')
-    implementation 'com.google.firebase:firebase-auth'
+    implementation platform('com.google.firebase:firebase-bom:33.1.0') // Hãy dùng phiên bản mới nhất
     implementation 'com.google.firebase:firebase-firestore'
-    implementation 'com.google.firebase:firebase-storage'  // lưu ảnh/nhạc
+    implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-database'// lưu ảnh/nhạc
 
 // Google Sign-In
     implementation 'com.google.android.gms:play-services-auth:21.0.0'
+
+    //mail
+    implementation 'com.sun.mail:android-mail:1.6.7'
+    implementation 'com.sun.mail:android-activation:1.6.7'
 
     // JWT
     implementation libs.jjwt.api
     runtimeOnly libs.jjwt.impl
     runtimeOnly libs.jjwt.jackson
+
+    // BCrypt for password hashing
+    implementation 'org.mindrot:jbcrypt:0.4'
 }

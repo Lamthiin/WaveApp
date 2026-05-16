@@ -11,8 +11,8 @@ public class User {
     private String phone;
     private String password;
     private String name;
-    private String avatar;          // path file anh: "images/avatars/u001.jpg"
-    @Builder.Default private String role = "USER"; // "USER" hoac "ADMIN"
+    private String avatar;
+    @Builder.Default private String role = "USER";
     @Builder.Default private boolean active = true;
     @Builder.Default private boolean verified = false;
     private LocalDateTime createdAt;

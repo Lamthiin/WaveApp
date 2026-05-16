@@ -1,19 +1,17 @@
 package com.ptithcm.waveapp.service;
 
-import com.ptithcm.waveapp.dto.request.UpdateProfileRequest;
-import com.ptithcm.waveapp.dto.response.*;
-import com.ptithcm.waveapp.exception.ResourceNotFoundException;
+import com.ptithcm.waveapp.model.Album;
+import com.ptithcm.waveapp.model.Artist;
+import com.ptithcm.waveapp.model.Playlist;
+import com.ptithcm.waveapp.model.Song;
 import com.ptithcm.waveapp.model.User;
 import com.ptithcm.waveapp.repository.*;
-import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 /**
- * Xử lý: UserProfileActivity.java
- *   - Xem thông tin cá nhân
- *   - Cập nhật name, avatar, phone
- *   - Thống kê: số bài đã like, số album đã lưu, số nghệ sĩ đang follow, số playlist
+ * UserProfileActivity: xem profile, cập nhật name/avatar, thống kê
  */
-@RequiredArgsConstructor
 public class UserProfileService {
 
     private final UserRepository             userRepo;
@@ -21,43 +19,70 @@ public class UserProfileService {
     private final LikedAlbumRepository       likedAlbumRepo;
     private final UserFollowArtistRepository  followRepo;
     private final PlaylistRepository          playlistRepo;
+    private final SongRepository              songRepo = null;
 
-    /** UserProfileActivity: load thông tin user */
-    public UserProfileResponse getProfile(String userId) {
-        User user = findUser(userId);
-        return buildProfile(user);
+    public UserProfileService(UserRepository userRepo, LikedSongRepository likedSongRepo,
+                               LikedAlbumRepository likedAlbumRepo,
+                               UserFollowArtistRepository followRepo,
+                               PlaylistRepository playlistRepo) {
+        this.userRepo      = userRepo;
+        this.likedSongRepo = likedSongRepo;
+        this.likedAlbumRepo = likedAlbumRepo;
+        this.followRepo    = followRepo;
+        this.playlistRepo  = playlistRepo;
     }
 
-    /** UserProfileActivity: cập nhật thông tin */
-    public UserProfileResponse updateProfile(String userId, UpdateProfileRequest req) {
-        User user = findUser(userId);
-        if (req.getName()   != null) user.setName(req.getName());
-        if (req.getAvatar() != null) user.setAvatar(req.getAvatar());
-        if (req.getPhone()  != null) user.setPhone(req.getPhone());
-        userRepo.save(user);
-        return buildProfile(user);
-    }
-
-    private User findUser(String userId) {
+    /** Lấy thông tin user */
+    public User getProfile(String userId) {
         return userRepo.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại"));
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
     }
 
-    private UserProfileResponse buildProfile(User user) {
-        long likedSongs   = likedSongRepo.findByUserIdOrderByLikedAtDesc(user.getId()).size();
-        long likedAlbums  = likedAlbumRepo.findByUserIdOrderByAddedAtDesc(user.getId()).size();
-        long followArtists = followRepo.findByUserIdOrderByFollowedAtDesc(user.getId()).size();
-        long playlists    = playlistRepo.findByUserIdOrderByCreatedAtDesc(user.getId()).size();
-
-        return UserProfileResponse.builder()
-                .id(user.getId()).username(user.getUsername())
-                .email(user.getEmail()).phone(user.getPhone())
-                .name(user.getName()).avatar(user.getAvatar())
-                .role(user.getRole().name())
-                .likedSongsCount(likedSongs)
-                .likedAlbumsCount(likedAlbums)
-                .followingArtistsCount(followArtists)
-                .playlistsCount(playlists)
-                .build();
+    /** Cập nhật name và avatar */
+    public User updateProfile(String userId, String name, String avatarPath) {
+        User user = getProfile(userId);
+        if (name       != null) user.setName(name);
+        if (avatarPath != null) user.setAvatar(avatarPath);
+        userRepo.save(user);
+        return user;
     }
+
+    /** Số bài hát đã like (fragment_library tabSongs) */
+    public int getLikedSongsCount(String userId) {
+        return likedSongRepo.findByUserIdOrderByLikedAtDesc(userId).size();
+    }
+
+    /** Số album đã lưu (fragment_library tabAlbums) */
+    public int getLikedAlbumsCount(String userId) {
+        return likedAlbumRepo.findByUserIdOrderByAddedAtDesc(userId).size();
+    }
+
+    /** Số nghệ sĩ đang follow (fragment_library tabArtists) */
+    public int getFollowingArtistsCount(String userId) {
+        return followRepo.findByUserIdOrderByFollowedAtDesc(userId).size();
+    }
+
+    /** Số playlist (fragment_library tabCustomPlaylists) */
+    public int getPlaylistsCount(String userId) {
+        return playlistRepo.findByUserIdOrderByCreatedAtDesc(userId).size();
+    }
+
+    public List<Song> getLikedSongs(String userId) {
+        return songRepo.findLikedByUser(userId);
+    }
+
+    public List<Artist> getFollowingArtists(String userId) {
+        return songRepo.findArtistsFollowedByUser(userId);
+    }
+
+    public List<Album> getLikedAlbums(String userId) {
+        return songRepo.findAlbumsLikedByUser(userId);
+    }
+
+    public List<Playlist> getMyPlaylists(String userId) {
+        return playlistRepo.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    // FIX 6: role là String → dùng user.getRole() trực tiếp, không .name()
+    // Không cần method riêng vì User.getRole() đã trả về String "USER"/"ADMIN"
 }

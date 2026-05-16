@@ -19,6 +19,7 @@
         app:shapeAppearanceOverlay="@style/CircleImage" />
 
     <TextView
+        android:id="@+id/btn_filter_all"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Tất cả"
@@ -28,9 +29,12 @@
         android:paddingVertical="8dp"
         android:layout_marginStart="12dp"
         android:textSize="13sp"
-        android:textStyle="bold"/>
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"/>
 
     <TextView
+        android:id="@+id/btn_filter_music"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Nhạc"
@@ -39,7 +43,9 @@
         android:paddingHorizontal="16dp"
         android:paddingVertical="8dp"
         android:layout_marginStart="8dp"
-        android:textSize="13sp"/>
+        android:textSize="13sp"
+        android:clickable="true"
+        android:focusable="true"/>
 
     <View
         android:layout_width="0dp"

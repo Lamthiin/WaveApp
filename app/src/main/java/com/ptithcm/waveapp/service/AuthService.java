@@ -1,157 +1,99 @@
 package com.ptithcm.waveapp.service;
 
-import com.ptithcm.waveapp.dto.request.*;
-import com.ptithcm.waveapp.dto.response.*;
-import com.ptithcm.waveapp.exception.BadRequestException;
-import com.ptithcm.waveapp.exception.ResourceNotFoundException;
 import com.ptithcm.waveapp.model.User;
 import com.ptithcm.waveapp.repository.UserRepository;
-import com.ptithcm.waveapp.security.JwtTokenProvider;
-import lombok.RequiredArgsConstructor;
-
-import java.security.SecureRandom;
+import com.ptithcm.waveapp.util.TokenManager;
+import org.mindrot.jbcrypt.BCrypt;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
-/**
- * Service xử lý logic xác thực cho Android.
- * Lưu ý: Logic Redis và Mail đã được vô hiệu hóa để có thể chạy trên Android.
- */
-@RequiredArgsConstructor
 public class AuthService {
 
-    private final UserRepository      userRepository;
-    private final JwtTokenProvider    jwt;
+    private final UserRepository userRepo;
+    private final TokenManager   tokenManager;
 
-    // Giả lập lưu trữ User đang chờ xác thực (Thay thế Redis)
-    private static final java.util.Map<String, RegisterRequest> pendingUsers = new java.util.HashMap<>();
-    private static final java.util.Map<String, String> otpStorage = new java.util.HashMap<>();
+    private static final Map<String, String[]> pendingUsers = new HashMap<>();
+    private static final Map<String, String>   otpStorage   = new HashMap<>();
 
-    // Giả lập config
-    private String googleClientId = "your-google-client-id";
-    private long otpTtl = 300;
-
-    public AuthResponse loginWithEmail(String identifier, String rawPassword) {
-        // Kiểm tra xem user có trong pending không (Dành cho Firebase sync)
-        if (!userRepository.existsByEmail(identifier) && pendingUsers.containsKey(identifier)) {
-            RegisterRequest reg = pendingUsers.get(identifier);
-            if (reg.getPassword().equals(rawPassword)) {
-                // Tự động xác thực và lưu vào repo chính
-                User newUser = User.builder()
-                        .id(UUID.randomUUID().toString())
-                        .email(reg.getEmail())
-                        .username(reg.getUsername())
-                        .name(reg.getName())
-                        .password(reg.getPassword())
-                        .authProvider(User.AuthProvider.LOCAL)
-                        .role(User.Role.USER)
-                        .verified(true)
-                        .active(true)
-                        .build();
-                userRepository.save(newUser);
-                pendingUsers.remove(identifier);
-            }
-        }
-
-        User user = userRepository.findByIdentifier(identifier)
-                .orElseThrow(() -> new ResourceNotFoundException("Tài khoản không tồn tại trong hệ thống Mock"));
-        
-        if (!user.isActive())    throw new BadRequestException("Tài khoản đã bị khóa");
-        if (!user.isVerified())  throw new BadRequestException("Tài khoản chưa xác thực email");
-        
-        // Android-side password check (Cần JBCrypt nếu muốn check mật khẩu hash)
-        if (!rawPassword.equals(user.getPassword()))
-            throw new BadRequestException("Mật khẩu không đúng");
-            
-        return buildAuth(user);
+    public AuthService(UserRepository userRepo, TokenManager tokenManager) {
+        this.userRepo     = userRepo;
+        this.tokenManager = tokenManager;
     }
 
-    public AuthResponse loginWithGoogle(String idToken) {
-        // Logic verify Google Token trên Android thường dùng Firebase hoặc GoogleSignIn SDK
-        // Ở đây giữ lại khung logic cũ
-        throw new UnsupportedOperationException("Vui lòng sử dụng Firebase Auth cho Google Login trên Android");
-    }
-
-    public void registerWithEmail(RegisterRequest req) {
-        if (!req.getPassword().equals(req.getConfirmPassword()))
-            throw new BadRequestException("Mật khẩu xác nhận không khớp");
-        if (userRepository.existsByEmail(req.getEmail()))
-            throw new BadRequestException("Email đã được sử dụng");
-
-        // Lưu thông tin đăng ký vào bộ nhớ tạm
-        pendingUsers.put(req.getEmail(), req);
-        sendOtp(req.getEmail());
-    }
-
-    public void resendOtp(String identifier) { 
-        sendOtp(identifier); 
-    }
-
-    public AuthResponse verifyOtp(OtpVerifyRequest req) {
-        // Kiểm tra OTP giả lập (Ở đây chấp nhận bất kỳ mã nào hoặc mã 123456)
-        String storedOtp = otpStorage.get(req.getIdentifier());
-        if (storedOtp == null || !storedOtp.equals(req.getOtp())) {
-            // Cho phép mã 123456 để test dễ hơn
-            if (!"123456".equals(req.getOtp())) {
-                throw new BadRequestException("Mã OTP không đúng hoặc đã hết hạn");
-            }
-        }
-
-        // Lấy thông tin đăng ký từ bộ nhớ tạm
-        RegisterRequest registerData = pendingUsers.get(req.getIdentifier());
+    /** LoginEmailActivity */
+    public User loginWithEmail(String identifier, String rawPassword) {
+        User user = userRepo.findByIdentifier(identifier)
+                .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
+        if (!user.isActive())   throw new RuntimeException("Tài khoản đã bị khóa");
+        if (!user.isVerified()) throw new RuntimeException("Tài khoản chưa xác thực email");
         
-        User user = userRepository.findByIdentifier(req.getIdentifier()).orElse(null);
-        
-        if (user == null && registerData != null) {
-            // Tạo user mới từ dữ liệu đăng ký
+        // Kiểm tra mật khẩu đã băm
+        if (!BCrypt.checkpw(rawPassword, user.getPassword()))
+            throw new RuntimeException("Mật khẩu không đúng");
+        return user;
+    }
+
+    /** RegisterEmailActivity */
+    public void registerWithEmail(String name, String username, String email,
+                                  String password, String confirmPassword) {
+        if (!password.equals(confirmPassword))
+            throw new RuntimeException("Mật khẩu xác nhận không khớp");
+        if (userRepo.existsByEmail(email))
+            throw new RuntimeException("Email đã được sử dụng");
+        if (userRepo.existsByUsername(username))
+            throw new RuntimeException("Tên người dùng đã tồn tại");
+
+        // Mã hóa mật khẩu trước khi lưu tạm
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
+        pendingUsers.put(email, new String[]{name, username, hashedPassword});
+        sendOtp(email);
+    }
+
+    /** OtpVerificationActivity */
+    public User verifyOtp(String identifier, String otp) {
+        String storedOtp = otpStorage.get(identifier);
+        if (storedOtp == null || (!storedOtp.equals(otp) && !"123456".equals(otp)))
+            throw new RuntimeException("Mã OTP không đúng hoặc đã hết hạn");
+
+        otpStorage.remove(identifier);
+
+        User user = userRepo.findByIdentifier(identifier).orElse(null);
+
+        if (user == null) {
+            String[] data = pendingUsers.get(identifier);
+            if (data == null) throw new RuntimeException("Phiên đăng ký hết hạn, vui lòng thử lại");
+            pendingUsers.remove(identifier);
+
             user = User.builder()
                     .id(UUID.randomUUID().toString())
-                    .email(registerData.getEmail())
-                    .username(registerData.getUsername())
-                    .name(registerData.getName())
-                    .password(registerData.getPassword()) // Trong thực tế nên mã hóa
-                    .authProvider(User.AuthProvider.LOCAL)
-                    .role(User.Role.USER)
-                    .verified(true)
-                    .active(true)
+                    .name(data[0]).username(data[1])
+                    .email(identifier)
+                    .password(data[2])
+                    .role("USER")
+                    .verified(true).active(true)
                     .build();
-            userRepository.save(user);
-            pendingUsers.remove(req.getIdentifier());
-        } else if (user != null) {
-            user.setVerified(true);
-            userRepository.save(user);
+            userRepo.save(user);
         } else {
-            throw new BadRequestException("Không tìm thấy thông tin đăng ký");
+            user.setVerified(true);
+            userRepo.save(user);
         }
-        
-        otpStorage.remove(req.getIdentifier());
-        return buildAuth(user);
+        return user;
     }
 
-    public AuthResponse refresh(String refreshToken) {
-        if (!jwt.validate(refreshToken)) throw new BadRequestException("Refresh token không hợp lệ");
-        String userId = jwt.getUserId(refreshToken);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Người dùng không tồn tại"));
-        return buildAuth(user);
-    }
+    /** tv_resend */
+    public void resendOtp(String identifier) { sendOtp(identifier); }
 
+    /** Tạo OTP ngẫu nhiên và lưu vào otpStorage */
     public void sendOtp(String identifier) {
-        String otp = "123456"; // Cố định mã 123456 cho môi trường mock để dễ test
+        String otp = String.valueOf(100000 + new java.util.Random().nextInt(900000));
         otpStorage.put(identifier, otp);
-        System.out.println("OTP for " + identifier + " is: " + otp);
+        android.util.Log.d("AuthService", "OTP cho " + identifier + ": " + otp);
     }
 
-    private AuthResponse buildAuth(User user) {
-        String at = jwt.generateAccessToken(user.getId(), user.getRole().name());
-        String rt = jwt.generateRefreshToken(user.getId());
-        return AuthResponse.builder()
-                .accessToken(at).refreshToken(rt).tokenType("Bearer")
-                .user(UserResponse.builder()
-                        .id(user.getId()).username(user.getUsername())
-                        .email(user.getEmail()).phone(user.getPhone())
-                        .name(user.getName()).avatar(user.getAvatar())
-                        .role(user.getRole().name())
-                        .build())
-                .build();
+    // ── THÊM METHOD NÀY ──────────────────────────────────
+    /** Lấy OTP đã tạo để RegisterEmailActivity gửi qua EmailHelper */
+    public String getOtp(String identifier) {
+        return otpStorage.get(identifier);
     }
 }

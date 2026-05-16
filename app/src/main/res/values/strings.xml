@@ -2,7 +2,9 @@
     <string name="app_name">WaveApp</string>
     <string name="artist_name_st">Sơn Tùng M-TP</string>
     <string name="monthly_listeners">1,9 tr người nghe hằng tháng</string>
-    <string name="follow">Theo dõi</string>
+    <string name="follow">Follow</string>
+    <string name="following">Following</string>
+    <string name="followers_count">%1$d followers</string>
     <string name="shuffle">Shuffle</string>
     <string name="play">Play</string>
     <string name="popular">Phổ biến</string>

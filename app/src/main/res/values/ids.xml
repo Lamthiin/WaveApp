@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="genre_container" type="id" />
+    <item name="chart_container" type="id" />
+    <item name="tvGenreDesc" type="id" />
+    <item name="btnDelete" type="id" />
+    <item name="btnLike" type="id" />
+    <item name="btnMore" type="id" />
+</resources>

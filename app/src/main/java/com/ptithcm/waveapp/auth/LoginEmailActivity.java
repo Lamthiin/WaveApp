@@ -3,82 +3,91 @@ package com.ptithcm.waveapp.auth;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
-import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
+import com.google.android.material.button.MaterialButton;
 import com.ptithcm.waveapp.MainActivity;
 import com.ptithcm.waveapp.R;
-import com.ptithcm.waveapp.config.ServiceLocator;
-import com.ptithcm.waveapp.controller.AuthController;
-import com.ptithcm.waveapp.dto.request.LoginRequest;
-import com.ptithcm.waveapp.dto.response.ApiResponse;
-import com.ptithcm.waveapp.dto.response.AuthResponse;
-import com.google.android.material.button.MaterialButton;
+import com.ptithcm.waveapp.database.DatabaseHelper;
+import com.ptithcm.waveapp.model.User;
+import com.ptithcm.waveapp.repository.UserRepository;
+import com.ptithcm.waveapp.service.AuthService;
+import com.ptithcm.waveapp.util.TokenManager;
 
 public class LoginEmailActivity extends AppCompatActivity {
 
-    private EditText etAccount, etPassword;
-    private AuthController authController;
-    private FirebaseAuth mAuth;
-    private static final String TAG = "LoginEmailActivity";
+    private EditText       etAccount, etPassword;
+    private MaterialButton btnSubmit;
+    // 🔥 ĐÃ THÊM: Khai báo TextView cho sự kiện Quên mật khẩu
+    private TextView       tvForgotPassword;
+
+    private AuthService  authService;
+    private TokenManager tokenManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_email);
 
-        authController = ServiceLocator.getInstance().getAuthController();
-        mAuth = FirebaseAuth.getInstance();
+        DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
+        UserRepository userRepo = new UserRepository(dbHelper);
+        tokenManager = new TokenManager(this);
+        authService  = new AuthService(userRepo, tokenManager);
 
-        ImageButton btnBack = findViewById(R.id.btn_back);
-        etAccount = findViewById(R.id.et_login_account);
+        etAccount  = findViewById(R.id.et_login_account);
         etPassword = findViewById(R.id.et_login_password);
-        MaterialButton btnSubmit = findViewById(R.id.btn_login_submit);
+        btnSubmit  = findViewById(R.id.btn_login_submit);
 
-        btnBack.setOnClickListener(v -> finish());
+        // 🔥 ĐÃ THÊM: Ánh xạ View từ XML thông qua ID đã thiết lập ở các bước trước
+        tvForgotPassword = findViewById(R.id.tv_forgot_password);
+
+        findViewById(R.id.btn_back).setOnClickListener(v -> finish());
+
+        // 🔥 ĐÃ THÊM: Xử lý sự kiện click để chuyển hướng sang màn hình nhập Email khôi phục
+        if (tvForgotPassword != null) {
+            tvForgotPassword.setOnClickListener(v -> {
+                Intent intent = new Intent(this, ForgotPasswordActivity.class);
+                startActivity(intent);
+            });
+        }
 
         btnSubmit.setOnClickListener(v -> {
-            String account = etAccount.getText().toString().trim();
+            String account  = etAccount.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
 
-            if (account.isEmpty() || password.isEmpty()) {
-                Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
-                return;
-            }
+            if (account.isEmpty())  { etAccount.setError("Vui lòng nhập email hoặc tên người dùng"); return; }
+            if (password.isEmpty()) { etPassword.setError("Vui lòng nhập mật khẩu"); return; }
 
-            // Đăng nhập với Firebase
-            mAuth.signInWithEmailAndPassword(account, password)
-                    .addOnCompleteListener(this, task -> {
-                        if (task.isSuccessful()) {
-                            FirebaseUser user = mAuth.getCurrentUser();
-                            if (user != null && user.isEmailVerified()) {
-                                // Nếu mail đã xác thực, tiến hành đăng nhập vào hệ thống app logic
-                                proceedLogin(account, password);
-                            } else if (user != null) {
-                                Toast.makeText(this, "Vui lòng xác thực email trước khi đăng nhập", Toast.LENGTH_LONG).show();
-                                mAuth.signOut();
-                            }
-                        } else {
-                            // Thử đăng nhập với Admin (Mock) nếu Firebase thất bại (để test tài khoản admin@wave.com)
-                            proceedLogin(account, password);
-                        }
-                    });
+            login(account, password);
         });
     }
 
-    private void proceedLogin(String account, String password) {
-        LoginRequest request = new LoginRequest(account, password);
-        ApiResponse<AuthResponse> response = authController.loginEmail(request);
+    private void login(String account, String password) {
+        btnSubmit.setEnabled(false);
 
-        if (response.isSuccess()) {
-            Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(this, MainActivity.class);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            startActivity(intent);
-        } else {
-            Toast.makeText(this, response.getMessage(), Toast.LENGTH_SHORT).show();
-        }
+        new Thread(() -> {
+            try {
+                User user = authService.loginWithEmail(account, password);
+
+                runOnUiThread(() -> {
+                    btnSubmit.setEnabled(true);
+                    tokenManager.saveLogin(
+                            user.getId(), user.getUsername(), user.getName(),
+                            user.getEmail(), user.getAvatar(), user.getRole()
+                    );
+                    Toast.makeText(this, "Chào mừng " + user.getName(), Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(this, MainActivity.class)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+                    finish();
+                });
+
+            } catch (RuntimeException e) {
+                runOnUiThread(() -> {
+                    btnSubmit.setEnabled(true);
+                    Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+            }
+        }).start();
     }
 }

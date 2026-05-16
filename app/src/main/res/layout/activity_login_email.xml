@@ -89,11 +89,28 @@
             android:textSize="16sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Nút Quên mật khẩu -->
+    <TextView
+        android:id="@+id/tv_forgot_password"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="Quên mật khẩu?"
+        android:textColor="@color/white"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layout_login_password" />
+
+    <!-- ĐÃ SỬA: Nút Đăng nhập hoàn chỉnh -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_login_submit"
         android:layout_width="wrap_content"
         android:layout_height="55dp"
-        android:layout_marginTop="48dp"
+        android:layout_marginTop="32dp"
         android:paddingHorizontal="60dp"
         android:text="Đăng nhập"
         android:textAllCaps="false"
@@ -104,6 +121,6 @@
         app:cornerRadius="28dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layout_login_password" />
+        app:layout_constraintTop_toBottomOf="@id/tv_forgot_password" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

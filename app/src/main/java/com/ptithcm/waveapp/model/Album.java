@@ -1,6 +1,7 @@
 package com.ptithcm.waveapp.model;
 
 import lombok.*;
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -9,7 +10,7 @@ import java.time.LocalDateTime;
  * Hien thi: ImageFileHelper.loadIntoImageView(context, getImage(), imageView, placeholder)
  */
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Album {
+public class Album implements Serializable {
     private String id;
     private String name;
     private Artist artist;

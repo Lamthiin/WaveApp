@@ -12,7 +12,12 @@
           "package_name": "com.ptit.waveapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "177509917673-jjcq8pa51835d9ohuih51u5tt287t5fp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDL04gQGuMVEbF1DJGoOpfv3kvceMecMZQ"
@@ -20,7 +25,41 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "177509917673-jjcq8pa51835d9ohuih51u5tt287t5fp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:177509917673:android:c920cfc2f265ed84c4e178",
+        "android_client_info": {
+          "package_name": "com.ptithcm.waveapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "177509917673-jjcq8pa51835d9ohuih51u5tt287t5fp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDL04gQGuMVEbF1DJGoOpfv3kvceMecMZQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "177509917673-jjcq8pa51835d9ohuih51u5tt287t5fp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
