@@ -228,43 +228,78 @@ public class HomeFragment extends Fragment {
 
     // ── Genres ────────────────────────────────────────────
     private void displayGenres(List<Genre> genres) {
-        genreContainer.removeAllViews();
-        for (Genre genre : genres) {
-            View item = LayoutInflater.from(getContext())
-                    .inflate(R.layout.item_genre, genreContainer, false);
-            ((TextView) item.findViewById(R.id.tvGenreName)).setText(genre.getName());
+        if (genres == null) return;
+        requireActivity().runOnUiThread(() -> {
+            genreContainer.removeAllViews();
+            
+            // Create rows for a 2-column grid-like appearance using LinearLayout
+            LinearLayout currentRow = null;
+            for (int i = 0; i < genres.size(); i++) {
+                if (i % 2 == 0) {
+                    currentRow = new LinearLayout(getContext());
+                    currentRow.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT, 
+                            LinearLayout.LayoutParams.WRAP_CONTENT));
+                    currentRow.setOrientation(LinearLayout.HORIZONTAL);
+                    genreContainer.addView(currentRow);
+                }
+                
+                Genre genre = genres.get(i);
+                View item = LayoutInflater.from(getContext())
+                        .inflate(R.layout.item_genre, currentRow, false);
+                
+                // Adjust layout params for equal width in the row
+                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) item.getLayoutParams();
+                lp.width = 0;
+                lp.weight = 1;
+                item.setLayoutParams(lp);
 
-            item.setOnClickListener(v -> {
-                Intent intent = new Intent(getActivity(), SongsByCategoryActivity.class);
-                intent.putExtra("GENRE_ID",   genre.getId());
-                intent.putExtra("GENRE_NAME", genre.getName());
-                startActivity(intent);
-            });
-            genreContainer.addView(item);
-        }
+                ((TextView) item.findViewById(R.id.tvGenreName)).setText(genre.getName());
+
+                item.setOnClickListener(v -> {
+                    Intent intent = new Intent(getActivity(), SongsByCategoryActivity.class);
+                    intent.putExtra("GENRE_ID",   genre.getId());
+                    intent.putExtra("GENRE_NAME", genre.getName());
+                    startActivity(intent);
+                });
+                
+                if (currentRow != null) {
+                    currentRow.addView(item);
+                }
+            }
+        });
     }
 
     // ── Songs (Bảng xếp hạng) ────────────────────────────
     private void displaySongs(List<Song> songs, LinearLayout container) {
         container.removeAllViews();
+        int[] colors = {0xFFE94435, 0xFF8E24AA, 0xFF2196F3, 0xFF4CAF50}; // Một số màu cho chart
+        int i = 0;
         for (Song song : songs) {
             View item = LayoutInflater.from(getContext())
-                    .inflate(R.layout.item_song, container, false);
-            ((TextView) item.findViewById(R.id.tvSongTitle)).setText(song.getName());
-            if (song.getArtist() != null)
-                ((TextView) item.findViewById(R.id.tvArtistName)).setText(song.getArtist().getName());
+                    .inflate(R.layout.item_chart, container, false);
+            
+            TextView tvTitle = item.findViewById(R.id.tvChartTitle);
+            TextView tvDesc = item.findViewById(R.id.tvChartDesc);
+            com.google.android.material.card.MaterialCardView card = item.findViewById(R.id.cardChart);
 
-            // FIX 2: Glide load Firebase URL
-            Glide.with(this).load(song.getImage())
-                    .placeholder(R.drawable.ic_music_note)
-                    .into((ImageView) item.findViewById(R.id.imgSong));
+            tvTitle.setText(song.getName().toUpperCase());
+            if (song.getArtist() != null) {
+                tvDesc.setText("Bởi " + song.getArtist().getName());
+            }
+
+            card.setCardBackgroundColor(colors[i % colors.length]);
+            i++;
 
             item.setOnClickListener(v -> {
                 Intent intent = new Intent(getActivity(), MusicPlayerActivity.class);
-                intent.putExtra("SONG_ID", song.getId()); // FIX 3: chỉ truyền ID
+                intent.putExtra("SONG_ID", song.getId());
                 startActivity(intent);
             });
             container.addView(item);
+            
+            // Chỉ hiển thị tối đa 5-6 item ở trang home cho đẹp
+            if (i >= 10) break;
         }
     }
 }

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="160dp"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginEnd="16dp"
+    android:clickable="true"
+    android:focusable="true">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardChart"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        app:cardCornerRadius="8dp"
+        app:cardBackgroundColor="#E94435">
+
+        <ImageView
+            android:id="@+id/imgChart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tvChartTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="TOP 50\n\nVIETNAM"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:layout_gravity="center"/>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tvChartDesc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Thông tin cập nhật hằng ngày về những bản nhạc..."
+        android:textColor="#B3B3B3"
+        android:textSize="11sp"
+        android:layout_marginTop="8dp"
+        android:maxLines="2"
+        android:ellipsize="end"/>
+</LinearLayout>

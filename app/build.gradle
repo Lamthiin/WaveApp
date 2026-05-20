@@ -50,6 +50,7 @@ dependencies {
     implementation libs.constraintlayout
     implementation libs.glide
     implementation libs.cardview
+    implementation "androidx.gridlayout:gridlayout:1.0.0"
     implementation libs.work.runtime
     compileOnly libs.lombok
     annotationProcessor libs.lombok
