@@ -12,4 +12,28 @@ public class LikedSong {
     private User user;
     private Song song;
     private String likedAt;         // TEXT tu SQLite, khong can LocalDateTime
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Song getSong() {
+        return song;
+    }
+
+    public void setSong(Song song) {
+        this.song = song;
+    }
+
+    public String getLikedAt() {
+        return likedAt;
+    }
+
+    public void setLikedAt(String likedAt) {
+        this.likedAt = likedAt;
+    }
 }

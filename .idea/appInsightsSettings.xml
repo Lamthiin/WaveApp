@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.ptithcm.waveapp" />
+                  <option name="mobileSdkAppId" value="1:177509917673:android:c920cfc2f265ed84c4e178" />
+                  <option name="projectId" value="waveapp-8afdf" />
+                  <option name="projectNumber" value="177509917673" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

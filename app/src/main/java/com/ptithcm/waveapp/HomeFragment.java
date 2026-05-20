@@ -98,7 +98,7 @@ public class HomeFragment extends Fragment {
                         Glide.with(this).load(finalAvatarUrl).circleCrop()
                                 .placeholder(R.drawable.ic_avatar).into(imgAvt);
                     } else {
-                        imgAvt.setImageResource(R.drawable.ic_avatar);
+                        imgAvt.setImageResource(R.drawable.avatar_default);
                     }
                 }
 

@@ -16,4 +16,12 @@ public class User {
     @Builder.Default private boolean active = true;
     @Builder.Default private boolean verified = false;
     private LocalDateTime createdAt;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }
