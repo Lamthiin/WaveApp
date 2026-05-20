@@ -3,7 +3,6 @@ package com.ptithcm.waveapp;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.ptithcm.waveapp.adapter.SongAdapter;
@@ -11,7 +10,7 @@ import com.ptithcm.waveapp.model.Song;
 import com.ptithcm.waveapp.service.CategoryService;
 import java.util.List;
 
-public class SongsByCategoryActivity extends AppCompatActivity {
+public class SongsByCategoryActivity extends BaseMiniPlayerActivity {
 
     private CategoryService categoryService;
     private SongAdapter songAdapter;

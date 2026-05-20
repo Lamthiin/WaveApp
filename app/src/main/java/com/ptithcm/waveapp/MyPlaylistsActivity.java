@@ -6,7 +6,6 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.ptithcm.waveapp.adapter.PlaylistAdapter;
@@ -15,7 +14,7 @@ import com.ptithcm.waveapp.service.PlaylistService;
 import com.ptithcm.waveapp.util.TokenManager;
 import java.util.List;
 
-public class MyPlaylistsActivity extends AppCompatActivity {
+public class MyPlaylistsActivity extends BaseMiniPlayerActivity {
 
     private PlaylistService playlistService;
     private TokenManager tokenManager;

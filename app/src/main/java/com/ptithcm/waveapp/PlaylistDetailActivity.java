@@ -10,7 +10,6 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -30,7 +29,7 @@ import java.util.List;
 /**
  * Hiển thị chi tiết Album hoặc Playlist cá nhân.
  */
-public class PlaylistDetailActivity extends AppCompatActivity {
+public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
     private HomeService     homeService;
     private PlaylistService playlistService;

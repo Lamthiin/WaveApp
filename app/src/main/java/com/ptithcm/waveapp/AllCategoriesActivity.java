@@ -2,7 +2,6 @@ package com.ptithcm.waveapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.ptithcm.waveapp.adapter.GenreAdapter;
@@ -10,7 +9,7 @@ import com.ptithcm.waveapp.model.Genre;
 import com.ptithcm.waveapp.service.CategoryService;
 import java.util.List;
 
-public class AllCategoriesActivity extends AppCompatActivity {
+public class AllCategoriesActivity extends BaseMiniPlayerActivity {
 
     private CategoryService categoryService;
     private GenreAdapter genreAdapter;

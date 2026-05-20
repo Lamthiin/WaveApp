@@ -32,6 +32,9 @@
             android:name=".PlaylistDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".ArtistDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".MyPlaylistsActivity"
             android:exported="false" />
         <activity

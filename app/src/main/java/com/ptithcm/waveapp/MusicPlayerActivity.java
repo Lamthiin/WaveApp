@@ -62,6 +62,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     private boolean isLiked = false;
     private boolean shuffleEnabled = false;
     private boolean lyricsExpanded = false;
+    private boolean isUserSeeking = false;
 
     private Song currentSong;
     private String songId;
@@ -293,14 +294,19 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         btnPlay.setImageResource(isPlaying ? R.drawable.pausemusic : R.drawable.playmusic);
         if (isPlaying) {
             startSeekBarUpdates();
+        } else {
+            stopSeekBarUpdates();
         }
     }
 
     @Override
     public void onPrepared(int durationMs) {
         runOnUiThread(() -> {
+            isPlaying = true;
             seekBar.setMax(durationMs);
             tvTotalTime.setText(formatDuration(durationMs / 1000));
+            btnPlay.setImageResource(R.drawable.pausemusic);
+            startSeekBarUpdates();
             if (songId != null) {
                 new Thread(() -> songRepo.incrementPlayCount(songId)).start();
             }
@@ -322,7 +328,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     @Override
     public void onPlaybackStateChanged(boolean playing) {
         runOnUiThread(() -> {
-            isPlaying = playing;
+            this.isPlaying = playing;
             btnPlay.setImageResource(playing ? R.drawable.pausemusic : R.drawable.playmusic);
             if (playing) {
                 startSeekBarUpdates();
@@ -337,10 +343,12 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         progressRunnable = new Runnable() {
             @Override
             public void run() {
-                if (musicService != null && isPlaying) {
-                    int currentPos = musicService.getCurrentPosition();
-                    seekBar.setProgress(currentPos);
-                    tvCurrentTime.setText(formatDuration(currentPos / 1000));
+                if (musicService != null && musicService.isPlaying()) {
+                    if (!isUserSeeking) {
+                        int currentPos = musicService.getCurrentPosition();
+                        seekBar.setProgress(currentPos);
+                        tvCurrentTime.setText(formatDuration(currentPos / 1000));
+                    }
                     handler.postDelayed(this, 1000);
                 }
             }
@@ -401,8 +409,31 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         btnBack.setOnClickListener(v -> finish());
 
         btnPlay.setOnClickListener(v -> {
-            if (musicService == null || !musicService.hasPlayer()) return;
+            if (!serviceBound || musicService == null) {
+                if (currentSong != null) {
+                    prepareMusicService(currentSong.getUrl());
+                } else {
+                    Toast.makeText(this, "Trinh phat nhac chua san sang", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+
+            if (!musicService.hasPlayer()) {
+                if (currentSong != null) {
+                    prepareMusicService(currentSong.getUrl());
+                }
+                return;
+            }
+
+            boolean shouldPlay = !musicService.isPlaying();
             musicService.togglePlayback();
+            isPlaying = shouldPlay;
+            btnPlay.setImageResource(shouldPlay ? R.drawable.pausemusic : R.drawable.playmusic);
+            if (shouldPlay) {
+                startSeekBarUpdates();
+            } else {
+                stopSeekBarUpdates();
+            }
         });
 
         btnAdd.setOnClickListener(v -> toggleLike());
@@ -418,13 +449,25 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser && musicService != null) {
-                    musicService.seekTo(progress);
                     tvCurrentTime.setText(formatDuration(progress / 1000));
                 }
             }
 
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                isUserSeeking = true;
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if (musicService != null) {
+                    musicService.seekTo(seekBar.getProgress());
+                }
+                isUserSeeking = false;
+                if (isPlaying) {
+                    startSeekBarUpdates();
+                }
+            }
         });
     }
 
@@ -631,7 +674,6 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     protected void onDestroy() {
         stopSeekBarUpdates();
         cancelSleepTimer();
-        if (musicService != null) musicService.setPlaybackCallback(null);
         if (serviceBound) {
             unbindService(serviceConnection);
             serviceBound = false;

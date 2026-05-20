@@ -8,7 +8,6 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -23,7 +22,7 @@ import java.util.List;
 /**
  * Màn hình tìm kiếm và thêm bài hát vào playlist cá nhân.
  */
-public class AddSongsToPlaylistActivity extends AppCompatActivity {
+public class AddSongsToPlaylistActivity extends BaseMiniPlayerActivity {
 
     private PlaylistService playlistService;
     private TokenManager    tokenManager;

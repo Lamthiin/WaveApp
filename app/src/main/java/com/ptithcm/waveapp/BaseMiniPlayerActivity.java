@@ -5,32 +5,31 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Color;
-import android.os.Bundle;
 import android.os.IBinder;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.imageview.ShapeableImageView;
-import com.ptithcm.waveapp.auth.LoginActivity;
 import com.ptithcm.waveapp.database.DatabaseHelper;
 import com.ptithcm.waveapp.model.Artist;
 import com.ptithcm.waveapp.model.Song;
 import com.ptithcm.waveapp.repository.SongRepository;
-import com.ptithcm.waveapp.util.TokenManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity implements MusicPlayerService.PlaybackCallback {
+public abstract class BaseMiniPlayerActivity extends AppCompatActivity implements MusicPlayerService.PlaybackCallback {
 
     private LinearLayout layoutMiniPlayer;
     private ShapeableImageView ivMiniAlbumArt;
@@ -39,7 +38,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     private ImageButton btnMiniShuffle;
     private ImageButton btnMiniPlay;
 
-    private MusicPlayerService musicService;
+    protected MusicPlayerService musicService;
     private boolean serviceBound;
     private SongRepository songRepo;
     private final List<Song> playbackQueue = new ArrayList<>();
@@ -53,7 +52,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
             MusicPlayerService.LocalBinder binder = (MusicPlayerService.LocalBinder) service;
             musicService = binder.getService();
             serviceBound = true;
-            musicService.setPlaybackCallback(MainActivity.this);
+            musicService.setPlaybackCallback(BaseMiniPlayerActivity.this);
             updateMiniPlayerFromService();
             loadPlaybackQueue(musicService.getCurrentSongId());
         }
@@ -67,48 +66,68 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     };
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void setContentView(int layoutResID) {
+        super.setContentView(layoutResID);
+        attachMiniPlayerOverlay();
+    }
 
-        TokenManager tokenManager = new TokenManager(this);
-        if (!tokenManager.isLoggedIn()) {
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
+    private void attachMiniPlayerOverlay() {
+        ViewGroup contentRoot = findViewById(android.R.id.content);
+        if (contentRoot == null || contentRoot.getChildCount() == 0) {
             return;
         }
 
-        setContentView(R.layout.activity_main);
+        View existing = contentRoot.findViewById(R.id.layoutMiniPlayer);
+        if (existing != null) {
+            layoutMiniPlayer = (LinearLayout) existing;
+        } else {
+            View overlay = LayoutInflater.from(this).inflate(R.layout.layout_mini_player, contentRoot, false);
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
+            );
+            params.gravity = Gravity.BOTTOM;
+            params.leftMargin = dpToPx(8);
+            params.rightMargin = dpToPx(8);
+            params.bottomMargin = dpToPx(18);
+            overlay.setLayoutParams(params);
+            contentRoot.addView(overlay);
+            layoutMiniPlayer = overlay.findViewById(R.id.layoutMiniPlayer);
+        }
+
         songRepo = new SongRepository(DatabaseHelper.getInstance(this));
         initMiniPlayerViews();
         setupMiniPlayerListeners();
-        bindMusicService();
+    }
 
-        syncDataFromFirebase();
+    @Override
+    protected void onStart() {
+        super.onStart();
+        bindService(new Intent(this, MusicPlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+    }
 
-        if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, new HomeFragment())
-                    .commit();
+    @Override
+    protected void onStop() {
+        if (serviceBound) {
+            unbindService(serviceConnection);
+            serviceBound = false;
         }
+        super.onStop();
+    }
 
-        BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment = null;
-            if (item.getItemId() == R.id.nav_home) selectedFragment = new HomeFragment();
-            else if (item.getItemId() == R.id.nav_search) selectedFragment = new SearchFragment();
-            else if (item.getItemId() == R.id.nav_library) selectedFragment = new LibraryFragment();
-
-            if (selectedFragment != null) {
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, selectedFragment)
-                        .commit();
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (serviceBound) {
+            updateMiniPlayerFromService();
+            if (musicService != null) {
+                loadPlaybackQueue(musicService.getCurrentSongId());
             }
-            return true;
-        });
+        }
     }
 
     private void initMiniPlayerViews() {
-        layoutMiniPlayer = findViewById(R.id.layoutMiniPlayer);
+        if (layoutMiniPlayer == null) return;
         ivMiniAlbumArt = findViewById(R.id.ivMiniAlbumArt);
         tvMiniSongTitle = findViewById(R.id.tvMiniSongTitle);
         tvMiniArtistName = findViewById(R.id.tvMiniArtistName);
@@ -119,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     }
 
     private void setupMiniPlayerListeners() {
+        if (layoutMiniPlayer == null) return;
         ImageButton btnMiniPrevious = findViewById(R.id.btnMiniPrevious);
         ImageButton btnMiniNext = findViewById(R.id.btnMiniNext);
 
@@ -132,11 +152,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         btnMiniNext.setOnClickListener(v -> playMiniSongByDirection(1));
     }
 
-    private void bindMusicService() {
-        bindService(new Intent(this, MusicPlayerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    private void updateMiniPlayerFromService() {
+    protected void updateMiniPlayerFromService() {
         if (musicService == null || !musicService.hasPlayer()) {
             hideMiniPlayer();
             return;
@@ -153,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
                 .into(ivMiniAlbumArt);
     }
 
-    private void hideMiniPlayer() {
+    protected void hideMiniPlayer() {
         if (layoutMiniPlayer != null) {
             layoutMiniPlayer.setVisibility(View.GONE);
         }
@@ -209,10 +225,6 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         String artistName = getArtistName(song);
         ContextCompat.startForegroundService(this, new Intent(this, MusicPlayerService.class));
         musicService.playNewSong(song.getId(), song.getUrl(), song.getName(), artistName, song.getImage());
-        updateMiniPlayerFromSong(song, artistName);
-    }
-
-    private void updateMiniPlayerFromSong(Song song, String artistName) {
         layoutMiniPlayer.setVisibility(View.VISIBLE);
         tvMiniSongTitle.setText(song.getName());
         tvMiniArtistName.setText(artistName);
@@ -232,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         return "";
     }
 
-    private void openCurrentSongDetail() {
+    protected void openCurrentSongDetail() {
         if (musicService == null || musicService.getCurrentSongId() == null) return;
         Intent intent = new Intent(this, MusicPlayerActivity.class);
         intent.putExtra("SONG_ID", musicService.getCurrentSongId());
@@ -257,24 +269,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         btnMiniPlay.setImageResource(playing ? R.drawable.pausemusic : R.drawable.playmusic);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (serviceBound) {
-            updateMiniPlayerFromService();
-            if (musicService != null) {
-                loadPlaybackQueue(musicService.getCurrentSongId());
-            }
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        if (serviceBound) {
-            unbindService(serviceConnection);
-            serviceBound = false;
-        }
-        super.onDestroy();
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     @Override
@@ -290,10 +286,5 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     @Override
     public void onPlaybackStateChanged(boolean isPlaying) {
         updateMiniPlayerFromService();
-        updateMiniPlayButtonUI();
-    }
-
-    private void syncDataFromFirebase() {
-        // Firebase sync can be added here if remote data is needed later.
     }
 }
