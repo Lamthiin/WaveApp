@@ -77,4 +77,12 @@ public class PlaylistSongRepository {
                 .addedAt(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_PS_ADDED_AT)))
                 .build();
     }
+
+    public void deleteByPlaylistId(String playlistId) {
+        db.delete(
+                DatabaseHelper.TABLE_PLAYLIST_SONGS,
+                DatabaseHelper.COL_PS_PLAYLIST_ID + "=?",
+                new String[]{playlistId}
+        );
+    }
 }

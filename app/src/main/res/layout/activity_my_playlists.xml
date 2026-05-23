@@ -44,7 +44,7 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <!-- Header info: số playlist, số followers -->
+    <!-- Header info: số playlist -->
     <LinearLayout
         android:id="@+id/layout_stats"
         android:layout_width="0dp"
@@ -57,28 +57,12 @@
         app:layout_constraintTop_toBottomOf="@id/toolbar">
 
         <TextView
-            android:id="@+id/tv_follower_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0 người theo dõi"
-            android:textColor="#B3B3B3"
-            android:textSize="13sp" />
-
-        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="8dp"
-            android:text="•"
+            android:text="Danh sách Playlist"
             android:textColor="#B3B3B3"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/tv_following_count"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="52 đang theo dõi"
-            android:textColor="#B3B3B3"
-            android:textSize="13sp" />
+            android:textSize="20sp" />
 
     </LinearLayout>
 

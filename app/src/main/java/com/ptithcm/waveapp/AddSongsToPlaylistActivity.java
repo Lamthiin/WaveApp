@@ -67,17 +67,16 @@ public class AddSongsToPlaylistActivity extends BaseMiniPlayerActivity {
 
     private void setupRecyclerView() {
         songAdapter = new SongAdapter(songList);
+        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.ADD);
+
         rvResults.setLayoutManager(new LinearLayoutManager(this));
         rvResults.setAdapter(songAdapter);
 
-        // Click vào dấu "+" hoặc nút More để thêm bài
         songAdapter.setOnMoreClickListener((song, position) -> {
             addSongToPlaylist(song, position);
         });
-        
-        // Hoặc click vào item cũng thêm luôn (tùy UX)
+
         songAdapter.setOnSongClickListener(song -> {
-            // Có thể mở Player nghe thử hoặc thêm luôn
             Toast.makeText(this, "Nhấn icon bên phải để thêm vào playlist", Toast.LENGTH_SHORT).show();
         });
     }
@@ -114,12 +113,20 @@ public class AddSongsToPlaylistActivity extends BaseMiniPlayerActivity {
     private void addSongToPlaylist(Song song, int position) {
         try {
             playlistService.addSong(playlistId, song.getId(), tokenManager.getUserId());
+
             Toast.makeText(this, "Đã thêm " + song.getName(), Toast.LENGTH_SHORT).show();
-            
-            // Xóa khỏi danh sách kết quả tìm kiếm sau khi thêm thành công
-            songList.remove(position);
-            songAdapter.notifyItemRemoved(position);
-            
+
+            int realPosition = songList.indexOf(song);
+
+            if (realPosition >= 0) {
+                songList.remove(realPosition);
+
+                // Cập nhật lại toàn bộ danh sách để số thứ tự render lại đúng
+                songAdapter.notifyDataSetChanged();
+            } else {
+                searchSongs(etSearch.getText().toString().trim());
+            }
+
         } catch (Exception e) {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }

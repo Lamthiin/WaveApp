@@ -1,6 +1,7 @@
 package com.ptithcm.waveapp.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,21 +12,34 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ptithcm.waveapp.R;
-import com.ptithcm.waveapp.ServiceLocator;
 import com.ptithcm.waveapp.model.Song;
 import com.ptithcm.waveapp.util.ImageFileHelper;
-import com.ptithcm.waveapp.util.TokenManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder> {
 
-    public interface OnSongClickListener { void onSongClick(Song song); }
-    public interface OnLikeClickListener { void onLikeClick(Song song, int position); }
-    public interface OnMoreClickListener { void onMoreClick(Song song, int position); }
+    public enum ActionIconMode {
+        ADD,
+        DELETE
+    }
+
+    public interface OnSongClickListener {
+        void onSongClick(Song song);
+    }
+
+    public interface OnLikeClickListener {
+        void onLikeClick(Song song, int position);
+    }
+
+    public interface OnMoreClickListener {
+        void onMoreClick(Song song, int position);
+    }
 
     private List<Song> songs;
+    private ActionIconMode actionIconMode = ActionIconMode.ADD;
+
     private OnSongClickListener onSongClick;
     private OnLikeClickListener onLikeClick;
     private OnMoreClickListener onMoreClick;
@@ -36,6 +50,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
     public SongAdapter(List<Song> songs) {
         this.songs = songs != null ? songs : new ArrayList<>();
+    }
+
+    public void setActionIconMode(ActionIconMode mode) {
+        this.actionIconMode = mode != null ? mode : ActionIconMode.ADD;
+        notifyDataSetChanged();
     }
 
     public void setOnSongClickListener(OnSongClickListener listener) {
@@ -70,7 +89,9 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     @NonNull
     @Override
     public SongViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_song, parent, false);
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_song, parent, false);
+
         return new SongViewHolder(view);
     }
 
@@ -82,38 +103,75 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         if (holder.tvIndex != null) {
             holder.tvIndex.setText(String.valueOf(position + 1));
         }
-        holder.tvName.setText(song.getName());
-        holder.tvArtist.setText(song.getArtist() != null ? song.getArtist().getName() : "");
 
-        ImageFileHelper.loadIntoImageView(context, song.getImage(), holder.imgSong, R.drawable.ic_music_note);
+        if (holder.tvName != null) {
+            holder.tvName.setText(song.getName());
+        }
+
+        if (holder.tvArtist != null) {
+            holder.tvArtist.setText(song.getArtist() != null ? song.getArtist().getName() : "");
+        }
+
+        if (holder.imgSong != null) {
+            ImageFileHelper.loadIntoImageView(
+                    context,
+                    song.getImage(),
+                    holder.imgSong,
+                    R.drawable.ic_music_note
+            );
+        }
+
+        int iconRes = actionIconMode == ActionIconMode.DELETE
+                ? R.drawable.ic_delete
+                : R.drawable.ic_add;
+
+        int iconColor = actionIconMode == ActionIconMode.DELETE
+                ? Color.parseColor("#FF5252")
+                : context.getColor(R.color.spotify_green);
 
         holder.itemView.setOnClickListener(v -> {
+            int adapterPosition = holder.getAdapterPosition();
+
+            if (adapterPosition == RecyclerView.NO_POSITION) return;
+            if (adapterPosition < 0 || adapterPosition >= songs.size()) return;
+
             if (onSongClick != null) {
-                onSongClick.onSongClick(song);
+                onSongClick.onSongClick(songs.get(adapterPosition));
             }
         });
 
         if (holder.btnLike != null) {
-            String userId = new TokenManager(context).getUserId();
-            boolean isLiked = false;
-            if (userId != null) {
-                isLiked = ServiceLocator.getInstance().likedSongRepository.existsByUserIdAndSongId(userId, song.getId());
-            }
-            holder.btnLike.setImageResource(R.drawable.ic_more_vert);
-            holder.btnLike.setColorFilter(context.getColor(R.color.gray_text));
+            holder.btnLike.setImageResource(iconRes);
+            holder.btnLike.setColorFilter(iconColor);
+
             holder.btnLike.setOnClickListener(v -> {
+                int adapterPosition = holder.getAdapterPosition();
+
+                if (adapterPosition == RecyclerView.NO_POSITION) return;
+                if (adapterPosition < 0 || adapterPosition >= songs.size()) return;
+
+                Song clickedSong = songs.get(adapterPosition);
+
                 if (onMoreClick != null) {
-                    onMoreClick.onMoreClick(song, position);
+                    onMoreClick.onMoreClick(clickedSong, adapterPosition);
                 } else if (onLikeClick != null) {
-                    onLikeClick.onLikeClick(song, position);
+                    onLikeClick.onLikeClick(clickedSong, adapterPosition);
                 }
             });
         }
 
         if (holder.btnMore != null && holder.btnMore != holder.btnLike) {
+            holder.btnMore.setImageResource(iconRes);
+            holder.btnMore.setColorFilter(iconColor);
+
             holder.btnMore.setOnClickListener(v -> {
+                int adapterPosition = holder.getAdapterPosition();
+
+                if (adapterPosition == RecyclerView.NO_POSITION) return;
+                if (adapterPosition < 0 || adapterPosition >= songs.size()) return;
+
                 if (onMoreClick != null) {
-                    onMoreClick.onMoreClick(song, position);
+                    onMoreClick.onMoreClick(songs.get(adapterPosition), adapterPosition);
                 }
             });
         }
@@ -125,6 +183,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     }
 
     static class SongViewHolder extends RecyclerView.ViewHolder {
+
         ImageView imgSong;
         TextView tvIndex;
         TextView tvName;
@@ -134,15 +193,33 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
         SongViewHolder(@NonNull View itemView) {
             super(itemView);
+
             imgSong = itemView.findViewById(R.id.imgSong);
+            if (imgSong == null) {
+                imgSong = itemView.findViewById(R.id.img_song_thumbnail);
+            }
+
             tvIndex = itemView.findViewById(R.id.tvSongIndex);
+
             tvName = itemView.findViewById(R.id.tvSongTitle);
+            if (tvName == null) {
+                tvName = itemView.findViewById(R.id.tv_song_title);
+            }
+
             tvArtist = itemView.findViewById(R.id.tvArtistName);
+            if (tvArtist == null) {
+                tvArtist = itemView.findViewById(R.id.tv_artist_name);
+            }
+
             btnLike = itemView.findViewById(R.id.btnLike);
             if (btnLike == null) {
                 btnLike = itemView.findViewById(R.id.favoriteButton);
             }
+
             btnMore = itemView.findViewById(R.id.btnMore);
+            if (btnMore == null) {
+                btnMore = itemView.findViewById(R.id.btn_more);
+            }
         }
     }
 }

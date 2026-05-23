@@ -24,7 +24,9 @@
                 android:id="@+id/img_category_banner"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
+                android:background="#202020"
+                android:adjustViewBounds="true"
+                android:scaleType="fitCenter"
                 android:src="@drawable/ic_logo"
                 app:layout_collapseMode="parallax" />
 

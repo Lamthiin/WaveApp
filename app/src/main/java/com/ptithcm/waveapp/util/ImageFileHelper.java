@@ -2,21 +2,24 @@ package com.ptithcm.waveapp.util;
 
 import android.content.Context;
 import android.widget.ImageView;
+
 import com.bumptech.glide.Glide;
-import com.ptithcm.waveapp.database.DatabaseHelper;
 
 public class ImageFileHelper {
-    // Trong file ImageFileHelper.java
+
     public static void loadIntoImageView(Context context, String url, ImageView imageView, int placeholderResId) {
-        if (url == null || url.isEmpty()) {
+        if (context == null || imageView == null) return;
+
+        if (url == null || url.trim().isEmpty()) {
             imageView.setImageResource(placeholderResId);
             return;
         }
 
         Glide.with(context)
-                .load(url) // Load trực tiếp URL từ Firebase bạn lấy dưới DB
+                .load(url.trim())
                 .placeholder(placeholderResId)
                 .error(placeholderResId)
+                .centerCrop()
                 .into(imageView);
     }
 }

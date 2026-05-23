@@ -94,15 +94,27 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         BottomNavigationView bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
-            if (item.getItemId() == R.id.nav_home) selectedFragment = new HomeFragment();
-            else if (item.getItemId() == R.id.nav_search) selectedFragment = new SearchFragment();
-            else if (item.getItemId() == R.id.nav_library) selectedFragment = new LibraryFragment();
+
+            if (item.getItemId() == R.id.nav_home) {
+                selectedFragment = new HomeFragment();
+
+            } else if (item.getItemId() == R.id.nav_search) {
+                selectedFragment = new SearchFragment();
+
+            } else if (item.getItemId() == R.id.nav_library) {
+                selectedFragment = new LibraryFragment();
+
+            } else if (item.getItemId() == R.id.nav_add_playlist) {
+                startActivity(new Intent(this, MyPlaylistsActivity.class));
+                return false;
+            }
 
             if (selectedFragment != null) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_container, selectedFragment)
                         .commit();
             }
+
             return true;
         });
     }

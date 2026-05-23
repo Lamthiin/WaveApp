@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME    = "wave_app.db";
-    private static final int    DATABASE_VERSION = 2; // Giữ version 2 để kích hoạt onUpgrade dọn sạch DB cũ lỗi
+    private static final int    DATABASE_VERSION = 1;
 
     private static DatabaseHelper instance;
     public static synchronized DatabaseHelper getInstance(Context ctx) {
@@ -37,6 +37,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_USER_ROLE       = "role";
     public static final String COL_USER_VERIFIED   = "verified";
     public static final String COL_USER_CREATED_AT = "created_at";
+    public static final String COL_USER_UPDATED_AT = "updated_at";
 
     // artists
     public static final String COL_ARTIST_ID        = "id";
@@ -78,6 +79,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_PLAYLIST_NAME       = "name";
     public static final String COL_PLAYLIST_IMAGE      = "image";
     public static final String COL_PLAYLIST_CREATED_AT = "created_at";
+    public static final String COL_PLAYLIST_UPDATED_AT = "updated_at";
 
     // playlist_songs
     public static final String COL_PS_PLAYLIST_ID = "playlist_id";
@@ -122,7 +124,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_USER_AVATAR + " TEXT," +
                 COL_USER_ROLE + " TEXT DEFAULT 'USER'," +
                 COL_USER_VERIFIED + " INTEGER DEFAULT 0," +
-                COL_USER_CREATED_AT + " TEXT DEFAULT (datetime('now')))");
+                COL_USER_CREATED_AT + " TEXT DEFAULT (datetime('now'))," +
+                COL_USER_UPDATED_AT + " TEXT DEFAULT (datetime('now')))");
 
         db.execSQL("CREATE TABLE " + TABLE_ARTISTS + "(" +
                 COL_ARTIST_ID + " TEXT PRIMARY KEY," +
@@ -168,6 +171,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_PLAYLIST_NAME + " TEXT NOT NULL," +
                 COL_PLAYLIST_IMAGE + " TEXT," +
                 COL_PLAYLIST_CREATED_AT + " TEXT DEFAULT (datetime('now'))," +
+                COL_PLAYLIST_UPDATED_AT + " TEXT DEFAULT (datetime('now'))," +
                 "FOREIGN KEY(" + COL_PLAYLIST_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COL_USER_ID + "))");
 
         db.execSQL("CREATE TABLE " + TABLE_PLAYLIST_SONGS + "(" +
@@ -209,20 +213,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // 1. TABLE USERS
         db.execSQL("INSERT INTO " + TABLE_USERS + " VALUES" +
-                "('u001','admin','admin@wave.com','123456','Admin Wave',NULL,'ADMIN',1,'2026-01-01')," +
-                "('u002','sonnguyen','son@gmail.com','123456','Nguyen Van Son',NULL,'USER',1,'2026-01-02')," +
-                "('u003','minhtu','tu@gmail.com','123456','Tran Minh Tu',NULL,'USER',1,'2026-01-03')," +
-                "('u004','lanhanh','hanh@gmail.com','123456','Le Lan Anh',NULL,'USER',1,'2026-01-04')");
+                "('u001','dev','dev@wave.com','$2a$12$dAHDlXmMPT9SXbITlkNEM.XT4bgIRhCJ804p6SR3f90otTwV/9AIm','Dev',NULL,'ADMIN',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u002','admin','admin@wave.com','$2a$12$m1d70IyAOOA4VlZ.MaHFJu6ZTQu5Izbu.xntueTChqGRYgFMO/qB6','Admin',NULL,'ADMIN',1,'2026-05-01T00:00:00.0','2026-05-01T00:00:20.0')," +
+                "('u003','usera','a@gmail.com','$2a$12$nLuSR.Pt3bVcMA7lQaYjp.a.V4yVl2erT94VQrvgB3HD6Zrv2ACPi','Nguyễn Văn A',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u004','userb','b@gmail.com','$2a$12$dCqy19P0rBt38Xeh3V9QjuraojEyBOZzjLYOIZL1PBlnkMll9zq0C','Trần Văn B',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u005','userc','c@gmail.com','$2a$12$vt9ePR5lkL4qgDmKZXOhauBcbIB5NZU.h5wy6/7g2oYLeOvct7Syq','Lê Thị C',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')");
 
         // 2. TABLE GENRES
         db.execSQL("INSERT INTO " + TABLE_GENRES + " VALUES" +
-                "('ballad','Ballad','Nhạc trữ tình tình cảm','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_cover%2Fdalab.jpg?alt=media&token=d40ba118-fb1f-4c45-b76a-df2058916abb')," +
-                "('edm','EDM','Electronic Dance Music sôi động','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_cover%2Fedm.jpg?alt=media&token=adf985c8-4be0-4036-a8ce-7f805826c0da')," +
-                "('vpop','V-Pop','Nhạc Pop Việt Nam thịnh hành','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_cover%2Fdalab.jpg?alt=media&token=d40ba118-fb1f-4c45-b76a-df2058916abb')," +
-                "('indie','Indie','Nhạc độc lập mộc mạc','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_cover%2Fdalab.jpg?alt=media&token=d40ba118-fb1f-4c45-b76a-df2058916abb')," +
-                "('rap','Rap/HipHop','Nhạc Rap underground và mainstream','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_cover%2Fedm.jpg?alt=media&token=adf985c8-4be0-4036-a8ce-7f805826c0da')");
+                "('ballad','Ballad','Nhạc trữ tình tình cảm','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_image%2Fballad.jpg?alt=media&token=e1ca0ed7-64a0-4fec-af52-0c7365ff4d66')," +
+                "('edm','EDM','Electronic Dance Music sôi động','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_image%2Fedm.jpg?alt=media&token=aa01228f-9f79-46dc-8f38-c8cafa430347')," +
+                "('vpop','V-Pop','Nhạc Pop Việt Nam thịnh hành','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_image%2Fvpop.jpg?alt=media&token=eccd8f87-01b9-4df3-a9be-51326c4a5d32')," +
+                "('indie','Indie','Nhạc độc lập mộc mạc','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_image%2Findie.jpg?alt=media&token=4e0c9b9e-487c-4f4b-a450-4ed43d0714ac')," +
+                "('rap','Rap/HipHop','Nhạc Rap underground và mainstream','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/genres_image%2Frap.jpg?alt=media&token=b3a7304a-38ec-4603-8b2b-2a94bf191a5b')");
 
-        // 3. TABLE ARTISTS (Đã FIX LỖI cột dữ liệu cho Vũ)
+        // 3. TABLE ARTISTS
         db.execSQL("INSERT INTO " + TABLE_ARTISTS + " VALUES" +
                 "('a001','Taylor Swift','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FTaylor.jpg?alt=media&token=b158701f-ee29-47ad-b487-a1de6cf9627b','Ca sĩ nhạc Pop hàng đầu thế giới',152000000)," +
                 "('a002','Hoàng Dũng','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FHo%C3%A0ng%20D%C5%A9ng.jpg?alt=media&token=40970181-abc3-4623-a7d6-57ef895571af','Hoàng tử tình ca Ballad Việt Nam',820000)," +
@@ -248,7 +253,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "('al009','ái','a008','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/album_covers%2F%C3%81I.jpg?alt=media&token=792c0375-0c2d-47d3-a527-5651516308cb','2023-08-15',18000000)," +
                 "('al010','Different World','a009','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/album_covers%2FDiferent%20Word.jpg?alt=media&token=4e6a2715-b95a-4f14-b635-ef94303a0f43','2018-12-14',500000000)");
 
-        // 5. TABLE SONGS (🔥 ĐÃ FIX LỖI ĐẢO ĐÚNG VỊ TRÍ CỘT: LINK_NHẠC LÊN TRƯỚC, LINK_ẢNH XUỐNG SAU)
+        // 5. TABLE SONGS
         db.execSQL("INSERT INTO " + TABLE_SONGS + " VALUES" +
                 // --- Nhóm Bùi Trường Linh ---
                 "('song_001','Từng Ngày Như Mãi Mãi','a003','al003','ballad',274," +
@@ -360,10 +365,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "'https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/songs_covers%2FH%C3%B3a%20ra.jpg?alt=media&token=fc4284b2-c06a-4840-b9f2-42ce0855c44d'," +
                 "'Cảm ơn vì đã cùng anh đi qua bão giông...',98000,4200)");
 
-        // 6. CÁC BẢNG LIÊN KẾT ĐÃ ĐƯỢC CHUẨN HÓA
-        db.execSQL("INSERT INTO " + TABLE_PLAYLISTS + " VALUES" +
-                "('pl001','u002','Nhạc Tuyển Chọn 1',NULL,'2026-02-01')," +
-                "('pl002','u002','Top Hits Việt Nam',NULL,'2026-02-10')");
+        // 6. CÁC BẢNG LIÊN KẾT
+        db.execSQL("INSERT INTO " + TABLE_PLAYLISTS +
+                "(" + COL_PLAYLIST_ID + "," +
+                COL_PLAYLIST_USER_ID + "," +
+                COL_PLAYLIST_NAME + "," +
+                COL_PLAYLIST_IMAGE + "," +
+                COL_PLAYLIST_CREATED_AT + "," +
+                COL_PLAYLIST_UPDATED_AT + ") VALUES" +
+                "('pl001','u001','Nhạc Tuyển Chọn 1',NULL,'2026-02-01','2026-02-01')," +
+                "('pl002','u001','Top Hits Việt Nam',NULL,'2026-02-10','2026-02-10')");
 
         db.execSQL("INSERT INTO " + TABLE_PLAYLIST_SONGS + " VALUES" +
                 "('pl001','song_001',0,'2026-02-01')," +
@@ -412,7 +423,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         super.onOpen(db);
         if (!db.isReadOnly()) {
             db.execSQL("PRAGMA foreign_keys = ON");
-            // 🔥 ĐÃ GỠ LỆNH XÓA NGHỆ SĨ SAI LOGIC Ở ĐÂY ĐỂ ĐẢM BẢO DATABASE KHÔNG BỊ KHÓA TRỐNG TRƠN
         }
     }
 

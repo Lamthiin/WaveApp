@@ -65,16 +65,16 @@
         app:layout_constraintStart_toEndOf="@id/img_song_thumbnail"
         app:layout_constraintTop_toBottomOf="@id/tv_song_title" />
 
-    <!-- Nút more: bao gồm xóa khỏi playlist -->
+    <!-- Nút xóa khỏi playlist -->
     <ImageButton
         android:id="@+id/btn_more"
         android:layout_width="36dp"
         android:layout_height="36dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@drawable/ic_more_vert"
+        android:src="@drawable/ic_delete"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:tint="#B3B3B3" />
+        app:tint="#FF5252" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

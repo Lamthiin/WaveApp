@@ -66,7 +66,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-database'// lưu ảnh/nhạc
 
-// Google Sign-In
+    // Google Sign-In
     implementation 'com.google.android.gms:play-services-auth:21.0.0'
 
     //mail

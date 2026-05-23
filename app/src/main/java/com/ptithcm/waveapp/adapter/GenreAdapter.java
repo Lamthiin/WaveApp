@@ -5,6 +5,7 @@ import android.view.*;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.ptithcm.waveapp.R;
 import com.ptithcm.waveapp.model.Genre;
 import com.ptithcm.waveapp.util.ImageFileHelper;
@@ -12,22 +13,18 @@ import com.ptithcm.waveapp.util.ImageFileHelper;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Dùng cho:
- *   - AllCategoriesActivity  (lưới 2 cột)
- *   - HomeFragment           (Khám phá các thể loại)
- *   - fragment_search        (tabGenres)
- */
 public class GenreAdapter extends RecyclerView.Adapter<GenreAdapter.GenreViewHolder> {
 
-    public interface OnGenreClickListener { void onGenreClick(Genre genre); }
+    public interface OnGenreClickListener {
+        void onGenreClick(Genre genre);
+    }
 
-    private List<Genre> genres;
+    private List<Genre> genres = new ArrayList<>();
     private OnGenreClickListener onGenreClick;
 
-    public GenreAdapter() { this.genres = new ArrayList<>(); }
-
-    public void setOnGenreClickListener(OnGenreClickListener l) { this.onGenreClick = l; }
+    public void setOnGenreClickListener(OnGenreClickListener listener) {
+        this.onGenreClick = listener;
+    }
 
     public void setGenres(List<Genre> genres) {
         this.genres = genres != null ? genres : new ArrayList<>();
@@ -45,31 +42,56 @@ public class GenreAdapter extends RecyclerView.Adapter<GenreAdapter.GenreViewHol
     @Override
     public void onBindViewHolder(@NonNull GenreViewHolder holder, int position) {
         Genre genre = genres.get(position);
-        Context ctx = holder.itemView.getContext();
+        Context context = holder.itemView.getContext();
 
-        holder.tvName.setText(genre.getName());
-        if (holder.tvDescription != null)
+        if (holder.tvName != null) {
+            holder.tvName.setText(genre.getName());
+        }
+
+        if (holder.tvDescription != null) {
             holder.tvDescription.setText(genre.getDescription());
+        }
 
-        ImageFileHelper.loadIntoImageView(ctx, genre.getImageUrl(),
-                holder.imgGenre, R.drawable.ic_music_note);
+        if (holder.imgGenre != null) {
+            ImageFileHelper.loadIntoImageView(
+                    context,
+                    genre.getImageUrl(),
+                    holder.imgGenre,
+                    R.drawable.ic_logo
+            );
+        }
 
         holder.itemView.setOnClickListener(v -> {
-            if (onGenreClick != null) onGenreClick.onGenreClick(genre);
+            if (onGenreClick != null) {
+                onGenreClick.onGenreClick(genre);
+            }
         });
     }
 
     @Override
-    public int getItemCount() { return genres.size(); }
+    public int getItemCount() {
+        return genres.size();
+    }
 
     static class GenreViewHolder extends RecyclerView.ViewHolder {
+
         ImageView imgGenre;
-        TextView  tvName, tvDescription;
+        TextView tvName;
+        TextView tvDescription;
 
         GenreViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgGenre      = itemView.findViewById(R.id.imgGenre);
-            tvName        = itemView.findViewById(R.id.tvGenreName);
+
+            imgGenre = itemView.findViewById(R.id.imgGenre);
+            if (imgGenre == null) {
+                imgGenre = itemView.findViewById(R.id.img_category);
+            }
+
+            tvName = itemView.findViewById(R.id.tvGenreName);
+            if (tvName == null) {
+                tvName = itemView.findViewById(R.id.tv_category_name);
+            }
+
             tvDescription = itemView.findViewById(R.id.tvGenreDesc);
         }
     }

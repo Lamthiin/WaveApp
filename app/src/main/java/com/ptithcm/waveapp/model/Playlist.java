@@ -7,9 +7,10 @@ import java.time.LocalDateTime;
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Playlist implements Serializable {
     private String id;
-    private User user;              // lay userId qua user.getId(), khong can field rieng
+    private User user;
     private String name;
-    private String image;           // path file anh: "images/playlists/pl001.jpg"
+    private String image;
     @Builder.Default private boolean isPublic = false;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

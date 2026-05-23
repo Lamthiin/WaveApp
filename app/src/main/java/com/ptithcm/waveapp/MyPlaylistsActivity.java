@@ -52,6 +52,12 @@ public class MyPlaylistsActivity extends BaseMiniPlayerActivity {
         findViewById(R.id.btn_create_first_playlist).setOnClickListener(v -> showCreatePlaylistDialog());
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadPlaylists();
+    }
+
     private void showCreatePlaylistDialog() {
         EditText etName = new EditText(this);
         etName.setHint("Tên playlist");

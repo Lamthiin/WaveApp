@@ -17,8 +17,8 @@
         android:title="Thư viện" />
 
     <item
-        android:id="@+id/nav_create"
+        android:id="@+id/nav_add_playlist"
         android:icon="@drawable/ic_add"
-        android:title="Tạo" />
+        android:title="Tạo Playlist" />
 
 </menu>
