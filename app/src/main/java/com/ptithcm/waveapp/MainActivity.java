@@ -305,6 +305,11 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         updateMiniPlayButtonUI();
     }
 
+    @Override
+    public void onRepeatModeChanged(boolean isRepeatOne) {
+        // Có thể update UI nếu mini player có nút repeat
+    }
+
     private void syncDataFromFirebase() {
         // Firebase sync can be added here if remote data is needed later.
     }

@@ -19,17 +19,22 @@ public class UserProfileService {
     private final LikedAlbumRepository       likedAlbumRepo;
     private final UserFollowArtistRepository  followRepo;
     private final PlaylistRepository          playlistRepo;
-    private final SongRepository              songRepo = null;
+    private final SongRepository              songRepo;
+    private final AlbumRepository             albumRepo;
 
     public UserProfileService(UserRepository userRepo, LikedSongRepository likedSongRepo,
                                LikedAlbumRepository likedAlbumRepo,
                                UserFollowArtistRepository followRepo,
-                               PlaylistRepository playlistRepo) {
+                               PlaylistRepository playlistRepo,
+                               SongRepository songRepo,
+                               AlbumRepository albumRepo) {
         this.userRepo      = userRepo;
         this.likedSongRepo = likedSongRepo;
         this.likedAlbumRepo = likedAlbumRepo;
         this.followRepo    = followRepo;
         this.playlistRepo  = playlistRepo;
+        this.songRepo      = songRepo;
+        this.albumRepo     = albumRepo;
     }
 
     /** Lấy thông tin user */
@@ -76,7 +81,7 @@ public class UserProfileService {
     }
 
     public List<Album> getLikedAlbums(String userId) {
-        return songRepo.findAlbumsLikedByUser(userId);
+        return albumRepo.findLikedByUser(userId);
     }
 
     public List<Playlist> getMyPlaylists(String userId) {

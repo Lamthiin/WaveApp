@@ -49,7 +49,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     private ShapeableImageView ivAlbumArt;
     private TextView tvSongTitle, tvArtistName, tvCurrentTime, tvTotalTime, tvHeaderTitle, tvLyricsPreview;
     private Button btnLyricsDetail;
-    private ImageButton btnPlay, btnPrevious, btnNext, btnBack, btnShuffle, btnTimer, btnQueue, btnAdd, btnOptions;
+    private ImageButton btnPlay, btnPrevious, btnNext, btnBack, btnShuffle, btnRepeat, btnTimer, btnQueue, btnAdd, btnOptions;
     private SeekBar seekBar;
 
     private MusicPlayerService musicService;
@@ -61,6 +61,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     private boolean isPlaying = false;
     private boolean isLiked = false;
     private boolean shuffleEnabled = false;
+    private boolean repeatEnabled = false;
     private boolean lyricsExpanded = false;
     private boolean isUserSeeking = false;
 
@@ -80,6 +81,10 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             MusicPlayerService.LocalBinder binder = (MusicPlayerService.LocalBinder) service;
             musicService = binder.getService();
             musicService.setPlaybackCallback(MusicPlayerActivity.this);
+            musicService.setNavigationCallback(new MusicPlayerService.NavigationCallback() {
+                @Override public void onSkipToPrevious() { runOnUiThread(() -> playPreviousSong()); }
+                @Override public void onSkipToNext()     { runOnUiThread(() -> playNextSong()); }
+            });
             serviceBound = true;
             if (!intentHandled) {
                 intentHandled = true;
@@ -145,6 +150,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         btnNext = findViewById(R.id.btnNext);
         btnBack = findViewById(R.id.btnBack);
         btnShuffle = findViewById(R.id.btnShuffle);
+        btnRepeat = findViewById(R.id.btnRepeat);
         btnTimer = findViewById(R.id.btnTimer);
         btnQueue = findViewById(R.id.btnQueue);
         btnAdd = findViewById(R.id.btnAdd);
@@ -154,9 +160,16 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         seekBar.setProgress(0);
         tvCurrentTime.setText(formatDuration(0));
         updateShuffleButtonUI();
+        updateRepeatButtonUI();
     }
 
     private void handleIntent() {
+        List<Song> queue = (List<Song>) getIntent().getSerializableExtra("QUEUE_LIST");
+        if (queue != null && !queue.isEmpty()) {
+            playbackQueue.clear();
+            playbackQueue.addAll(queue);
+        }
+
         songId = getIntent().getStringExtra("SONG_ID");
         if (songId != null) {
             loadSongDetails(songId);
@@ -168,8 +181,12 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             songId = currentSong.getId();
             updateUI(currentSong);
             loadLikedStatus(songId);
-            loadPlaybackQueue(songId);
-            prepareMusicService(currentSong.getUrl());
+            if (playbackQueue.isEmpty()) {
+                loadPlaybackQueue(songId);
+            } else {
+                currentIndex = findSongIndex(songId);
+                prepareMusicService(currentSong.getUrl());
+            }
         } else {
             Toast.makeText(this, "Khong tim thay bai hat", Toast.LENGTH_SHORT).show();
             finish();
@@ -265,6 +282,10 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
 
         if (isSameSongAlreadyLoaded(currentId)) {
             syncUiWithCurrentPlayback();
+            if (musicService != null) {
+                repeatEnabled = musicService.isRepeatOne();
+                updateRepeatButtonUI();
+            }
             return;
         }
 
@@ -335,6 +356,14 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             } else {
                 stopSeekBarUpdates();
             }
+        });
+    }
+
+    @Override
+    public void onRepeatModeChanged(boolean isRepeatOne) {
+        runOnUiThread(() -> {
+            this.repeatEnabled = isRepeatOne;
+            updateRepeatButtonUI();
         });
     }
 
@@ -438,6 +467,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
 
         btnAdd.setOnClickListener(v -> toggleLike());
         btnShuffle.setOnClickListener(v -> toggleShuffle());
+        if (btnRepeat != null) btnRepeat.setOnClickListener(v -> toggleRepeat());
         btnPrevious.setOnClickListener(v -> playPreviousSong());
         btnNext.setOnClickListener(v -> playNextSong());
         btnTimer.setOnClickListener(v -> showSleepTimerDialog());
@@ -528,6 +558,25 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
                 ? ContextCompat.getColor(this, R.color.spotify_green)
                 : ContextCompat.getColor(this, R.color.white);
         btnShuffle.setColorFilter(color);
+    }
+
+    private void toggleRepeat() {
+        if (musicService != null) {
+            musicService.toggleRepeatOne();
+            repeatEnabled = musicService.isRepeatOne();
+            updateRepeatButtonUI();
+        } else {
+            repeatEnabled = !repeatEnabled;
+            updateRepeatButtonUI();
+        }
+    }
+
+    private void updateRepeatButtonUI() {
+        if (btnRepeat == null) return;
+        int color = repeatEnabled
+                ? ContextCompat.getColor(this, R.color.spotify_green)
+                : ContextCompat.getColor(this, R.color.white);
+        btnRepeat.setColorFilter(color);
     }
 
     private void showQueueDialog() {

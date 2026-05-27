@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.os.Binder;
@@ -17,6 +18,8 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import com.bumptech.glide.Glide;
+
 import java.io.IOException;
 
 public class MusicPlayerService extends Service {
@@ -25,10 +28,19 @@ public class MusicPlayerService extends Service {
         void onPrepared(int durationMs);
         void onCompletion();
         void onPlaybackStateChanged(boolean isPlaying);
+        void onRepeatModeChanged(boolean isRepeatOne);
+    }
+
+    public interface NavigationCallback {
+        void onSkipToPrevious();
+        void onSkipToNext();
     }
 
     public static final String ACTION_TOGGLE_PLAYBACK = "com.ptithcm.waveapp.action.TOGGLE_PLAYBACK";
-    public static final String ACTION_STOP = "com.ptithcm.waveapp.action.STOP";
+    public static final String ACTION_PREVIOUS        = "com.ptithcm.waveapp.action.PREVIOUS";
+    public static final String ACTION_NEXT            = "com.ptithcm.waveapp.action.NEXT";
+    public static final String ACTION_REPEAT          = "com.ptithcm.waveapp.action.REPEAT";
+    public static final String ACTION_STOP            = "com.ptithcm.waveapp.action.STOP";
 
     private static final String TAG = "MusicPlayerService";
     private static final String CHANNEL_ID = "wave_playback";
@@ -37,12 +49,24 @@ public class MusicPlayerService extends Service {
     private final IBinder binder = new LocalBinder();
     private MediaPlayer mediaPlayer;
     private PlaybackCallback callback;
+    private NavigationCallback navigationCallback;
     private String currentSongId;
     private String currentImageUrl;
     private String currentUrl;
     private String currentTitle = "WaveApp";
     private String currentArtist = "";
     private boolean prepared = false;
+    private boolean repeatOne = false;
+    private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+    private final Runnable notificationUpdateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (prepared && mediaPlayer != null && mediaPlayer.isPlaying()) {
+                updateNotification(true);
+                handler.postDelayed(this, 1000);
+            }
+        }
+    };
 
     public class LocalBinder extends Binder {
         public MusicPlayerService getService() {
@@ -65,11 +89,23 @@ public class MusicPlayerService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && intent.getAction() != null) {
-            if (ACTION_TOGGLE_PLAYBACK.equals(intent.getAction())) {
-                togglePlayback();
-            } else if (ACTION_STOP.equals(intent.getAction())) {
-                stopPlayback();
-                stopSelf();
+            switch (intent.getAction()) {
+                case ACTION_TOGGLE_PLAYBACK:
+                    togglePlayback();
+                    break;
+                case ACTION_PREVIOUS:
+                    if (navigationCallback != null) navigationCallback.onSkipToPrevious();
+                    break;
+                case ACTION_NEXT:
+                    if (navigationCallback != null) navigationCallback.onSkipToNext();
+                    break;
+                case ACTION_REPEAT:
+                    toggleRepeatOne();
+                    break;
+                case ACTION_STOP:
+                    stopPlayback();
+                    stopSelf();
+                    break;
             }
         }
         return START_NOT_STICKY;
@@ -77,6 +113,10 @@ public class MusicPlayerService extends Service {
 
     public void setPlaybackCallback(PlaybackCallback callback) {
         this.callback = callback;
+    }
+
+    public void setNavigationCallback(NavigationCallback callback) {
+        this.navigationCallback = callback;
     }
 
     public void playNewSong(String url, String title, String artist) {
@@ -105,17 +145,25 @@ public class MusicPlayerService extends Service {
             mediaPlayer.setOnPreparedListener(mp -> {
                 prepared = true;
                 mp.start();
-                startForeground(NOTIFICATION_ID, buildNotification(true));
+                loadAlbumArtThenNotify(true);
+                startNotificationUpdates();
                 if (callback != null) {
                     callback.onPrepared(mp.getDuration());
                     callback.onPlaybackStateChanged(true);
                 }
             });
             mediaPlayer.setOnCompletionListener(mp -> {
-                stopForeground(false);
-                if (callback != null) {
-                    callback.onCompletion();
-                    callback.onPlaybackStateChanged(false);
+                if (repeatOne) {
+                    mp.seekTo(0);
+                    mp.start();
+                    updateNotification(true);
+                } else {
+                    stopNotificationUpdates();
+                    stopForeground(false);
+                    if (callback != null) {
+                        callback.onCompletion();
+                        callback.onPlaybackStateChanged(false);
+                    }
                 }
             });
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
@@ -139,11 +187,13 @@ public class MusicPlayerService extends Service {
         if (mediaPlayer == null || !prepared) return;
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
+            stopNotificationUpdates();
             updateNotification(false);
             if (callback != null) callback.onPlaybackStateChanged(false);
         } else {
             mediaPlayer.start();
-            startForeground(NOTIFICATION_ID, buildNotification(true));
+            loadAlbumArtThenNotify(true);
+            startNotificationUpdates();
             if (callback != null) callback.onPlaybackStateChanged(true);
         }
     }
@@ -159,9 +209,52 @@ public class MusicPlayerService extends Service {
     public void resumePlayback() {
         if (mediaPlayer != null && prepared && !mediaPlayer.isPlaying()) {
             mediaPlayer.start();
-            startForeground(NOTIFICATION_ID, buildNotification(true));
+            loadAlbumArtThenNotify(true);
             if (callback != null) callback.onPlaybackStateChanged(true);
         }
+    }
+
+    public void toggleRepeatOne() {
+        repeatOne = !repeatOne;
+        updateNotification(isPlaying());
+        if (callback != null) callback.onRepeatModeChanged(repeatOne);
+    }
+
+    public boolean isRepeatOne() {
+        return repeatOne;
+    }
+
+    public void setRepeatOne(boolean repeatOne) {
+        this.repeatOne = repeatOne;
+        updateNotification(isPlaying());
+    }
+
+    private void startNotificationUpdates() {
+        handler.removeCallbacks(notificationUpdateRunnable);
+        handler.post(notificationUpdateRunnable);
+    }
+
+    private void stopNotificationUpdates() {
+        handler.removeCallbacks(notificationUpdateRunnable);
+    }
+
+    private void loadAlbumArtThenNotify(boolean playing) {
+        if (currentImageUrl == null || currentImageUrl.isEmpty()) {
+            startForeground(NOTIFICATION_ID, buildNotification(playing, null));
+            return;
+        }
+        new Thread(() -> {
+            try {
+                Bitmap bitmap = Glide.with(getApplicationContext())
+                        .asBitmap()
+                        .load(currentImageUrl)
+                        .submit(256, 256)
+                        .get();
+                startForeground(NOTIFICATION_ID, buildNotification(playing, bitmap));
+            } catch (Exception e) {
+                startForeground(NOTIFICATION_ID, buildNotification(playing, null));
+            }
+        }).start();
     }
 
     public void seekTo(int positionMs) {
@@ -203,6 +296,7 @@ public class MusicPlayerService extends Service {
     }
 
     private void stopPlayback() {
+        stopNotificationUpdates();
         releasePlayer();
         stopForeground(true);
     }
@@ -216,37 +310,36 @@ public class MusicPlayerService extends Service {
     }
 
     private Notification buildNotification(boolean playing) {
+        return buildNotification(playing, null);
+    }
+
+    private Notification buildNotification(boolean playing, Bitmap albumArt) {
         Intent openIntent = new Intent(this, MusicPlayerActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent contentIntent = PendingIntent.getActivity(
-                this,
-                0,
-                openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+                this, 0, openIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Intent toggleIntent = new Intent(this, MusicPlayerService.class);
-        toggleIntent.setAction(ACTION_TOGGLE_PLAYBACK);
-        PendingIntent togglePendingIntent = PendingIntent.getService(
-                this,
-                1,
-                toggleIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent prevPendingIntent = PendingIntent.getService(this, 0,
+                new Intent(this, MusicPlayerService.class).setAction(ACTION_PREVIOUS),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Intent stopIntent = new Intent(this, MusicPlayerService.class);
-        stopIntent.setAction(ACTION_STOP);
-        PendingIntent stopPendingIntent = PendingIntent.getService(
-                this,
-                2,
-                stopIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+        PendingIntent togglePendingIntent = PendingIntent.getService(this, 1,
+                new Intent(this, MusicPlayerService.class).setAction(ACTION_TOGGLE_PLAYBACK),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        PendingIntent nextPendingIntent = PendingIntent.getService(this, 2,
+                new Intent(this, MusicPlayerService.class).setAction(ACTION_NEXT),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        PendingIntent repeatPendingIntent = PendingIntent.getService(this, 3,
+                new Intent(this, MusicPlayerService.class).setAction(ACTION_REPEAT),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         int playPauseIcon = playing ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play;
-        String playPauseTitle = playing ? "Tạm dừng" : "Phát";
+        int repeatIcon = repeatOne ? R.drawable.ic_repeat : android.R.drawable.ic_menu_rotate; // Using ic_menu_rotate as "repeat off" placeholder if ic_repeat is only for "on"
 
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_music_note)
                 .setContentTitle(currentTitle)
                 .setContentText(currentArtist)
@@ -254,15 +347,48 @@ public class MusicPlayerService extends Service {
                 .setOnlyAlertOnce(true)
                 .setOngoing(playing)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .addAction(playPauseIcon, playPauseTitle, togglePendingIntent)
-                .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Tắt", stopPendingIntent)
-                .build();
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .addAction(android.R.drawable.ic_media_previous, "Trước", prevPendingIntent)
+                .addAction(playPauseIcon, playing ? "Tạm dừng" : "Phát", togglePendingIntent)
+                .addAction(android.R.drawable.ic_media_next, "Tiếp", nextPendingIntent)
+                .addAction(repeatIcon, "Lặp lại", repeatPendingIntent);
+
+        if (albumArt != null) {
+            builder.setLargeIcon(albumArt);
+        }
+        
+        if (prepared) {
+            builder.setProgress(getDuration(), getCurrentPosition(), false);
+        }
+
+        return builder.build();
     }
 
     private void updateNotification(boolean playing) {
-        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.notify(NOTIFICATION_ID, buildNotification(playing));
+        if (currentImageUrl != null && !currentImageUrl.isEmpty()) {
+            new Thread(() -> {
+                try {
+                    Bitmap bitmap = Glide.with(getApplicationContext())
+                            .asBitmap()
+                            .load(currentImageUrl)
+                            .submit(256, 256)
+                            .get();
+                    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (manager != null) {
+                        manager.notify(NOTIFICATION_ID, buildNotification(playing, bitmap));
+                    }
+                } catch (Exception e) {
+                    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+                    if (manager != null) {
+                        manager.notify(NOTIFICATION_ID, buildNotification(playing, null));
+                    }
+                }
+            }).start();
+        } else {
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                manager.notify(NOTIFICATION_ID, buildNotification(playing, null));
+            }
         }
     }
 
@@ -283,6 +409,7 @@ public class MusicPlayerService extends Service {
 
     @Override
     public void onDestroy() {
+        stopNotificationUpdates();
         releasePlayer();
         super.onDestroy();
     }

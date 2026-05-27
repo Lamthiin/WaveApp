@@ -37,7 +37,7 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
     private TokenManager tokenManager;
 
     private ImageView imgAlbumArt;
-    private ImageButton btnChangePlaylistImage;
+    private ImageButton btnChangePlaylistImage, btnLikeAlbum;
 
     private TextView tvAlbumName, tvSongCount;
     private EditText etSearchSongs;
@@ -74,6 +74,7 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
     private void initViews() {
         imgAlbumArt = findViewById(R.id.img_playlist_cover);
         btnChangePlaylistImage = findViewById(R.id.btn_change_playlist_image);
+        btnLikeAlbum = findViewById(R.id.btn_like_album);
 
         tvAlbumName = findViewById(R.id.tv_playlist_name);
         tvSongCount = findViewById(R.id.tv_playlist_meta);
@@ -92,6 +93,7 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
         songAdapter.setOnSongClickListener(song -> {
             Intent intent = new Intent(this, MusicPlayerActivity.class);
             intent.putExtra("SONG_DATA", song);
+            intent.putExtra("QUEUE_LIST", new ArrayList<>(songList));
             startActivity(intent);
         });
 
@@ -163,6 +165,10 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
         findViewById(R.id.btn_add_song).setVisibility(android.view.View.GONE);
         findViewById(R.id.btn_edit_playlist).setVisibility(android.view.View.GONE);
         findViewById(R.id.btn_more_options).setVisibility(android.view.View.GONE);
+        if (btnLikeAlbum != null) {
+            btnLikeAlbum.setVisibility(android.view.View.VISIBLE);
+            updateLikeButtonUI();
+        }
 
         if (btnChangePlaylistImage != null) {
             btnChangePlaylistImage.setVisibility(android.view.View.GONE);
@@ -184,6 +190,10 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
         findViewById(R.id.fab_play).setOnClickListener(v -> playSongs(false));
         findViewById(R.id.btn_shuffle).setOnClickListener(v -> playSongs(true));
+
+        if (btnLikeAlbum != null) {
+            btnLikeAlbum.setOnClickListener(v -> toggleLikeAlbum());
+        }
 
         findViewById(R.id.btn_add_song).setOnClickListener(v -> {
             Intent intent = new Intent(this, AddSongsToPlaylistActivity.class);
@@ -243,6 +253,45 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Upload thất bại: " + e.getMessage(), Toast.LENGTH_LONG).show()
                 );
+    }
+
+    private void toggleLikeAlbum() {
+        String userId = tokenManager.getUserId();
+        if (userId == null || currentId == null) return;
+
+        new Thread(() -> {
+            boolean exists = ServiceLocator.getInstance().likedAlbumRepository.existsByUserIdAndAlbumId(userId, currentId);
+            if (exists) {
+                ServiceLocator.getInstance().likedAlbumRepository.deleteByUserIdAndAlbumId(userId, currentId);
+            } else {
+                com.ptithcm.waveapp.model.User user = new com.ptithcm.waveapp.model.User();
+                user.setId(userId);
+                
+                Album album = new Album();
+                album.setId(currentId);
+
+                com.ptithcm.waveapp.model.LikedAlbum la = new com.ptithcm.waveapp.model.LikedAlbum();
+                la.setUser(user);
+                la.setAlbum(album);
+                la.setAddedAt(java.time.LocalDateTime.now().toString());
+
+                ServiceLocator.getInstance().likedAlbumRepository.save(la);
+            }
+            runOnUiThread(this::updateLikeButtonUI);
+        }).start();
+    }
+
+    private void updateLikeButtonUI() {
+        String userId = tokenManager.getUserId();
+        if (userId == null || currentId == null || btnLikeAlbum == null) return;
+
+        new Thread(() -> {
+            boolean exists = ServiceLocator.getInstance().likedAlbumRepository.existsByUserIdAndAlbumId(userId, currentId);
+            runOnUiThread(() -> {
+                btnLikeAlbum.setImageResource(exists ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+                btnLikeAlbum.setColorFilter(exists ? android.graphics.Color.parseColor("#1DB954") : android.graphics.Color.parseColor("#B3B3B3"));
+            });
+        }).start();
     }
 
     private void playSongs(boolean shuffle) {

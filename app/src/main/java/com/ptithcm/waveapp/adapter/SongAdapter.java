@@ -22,7 +22,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
     public enum ActionIconMode {
         ADD,
-        DELETE
+        DELETE,
+        HEART
     }
 
     public interface OnSongClickListener {
@@ -74,6 +75,10 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         notifyDataSetChanged();
     }
 
+    public List<Song> getSongs() {
+        return this.songs;
+    }
+
     public void addSongs(List<Song> moreSongs) {
         if (moreSongs == null) return;
         int start = this.songs.size();
@@ -121,13 +126,24 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             );
         }
 
-        int iconRes = actionIconMode == ActionIconMode.DELETE
-                ? R.drawable.ic_delete
-                : R.drawable.ic_add;
+        int iconRes;
+        int iconColor;
 
-        int iconColor = actionIconMode == ActionIconMode.DELETE
-                ? Color.parseColor("#FF5252")
-                : context.getColor(R.color.spotify_green);
+        if (actionIconMode == ActionIconMode.HEART) {
+            String userId = new com.ptithcm.waveapp.util.TokenManager(context).getUserId();
+            boolean isLiked = false;
+            if (userId != null) {
+                isLiked = com.ptithcm.waveapp.ServiceLocator.getInstance().likedSongRepository.existsByUserIdAndSongId(userId, song.getId());
+            }
+            iconRes = isLiked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline;
+            iconColor = isLiked ? context.getColor(R.color.spotify_green) : Color.WHITE;
+        } else if (actionIconMode == ActionIconMode.DELETE) {
+            iconRes = R.drawable.ic_delete;
+            iconColor = Color.parseColor("#FF5252");
+        } else {
+            iconRes = R.drawable.ic_add;
+            iconColor = context.getColor(R.color.spotify_green);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             int adapterPosition = holder.getAdapterPosition();

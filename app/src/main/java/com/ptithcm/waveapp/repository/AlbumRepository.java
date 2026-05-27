@@ -37,6 +37,14 @@ public class AlbumRepository {
         return query("", null, "ORDER BY a." + DatabaseHelper.COL_ALBUM_PLAY_COUNT + " DESC LIMIT 10");
     }
 
+    public List<Album> findLikedByUser(String userId) {
+        return query("JOIN " + DatabaseHelper.TABLE_LIKED_ALBUMS + " la ON a." +
+                        DatabaseHelper.COL_ALBUM_ID + "=la." + DatabaseHelper.COL_LA_ALBUM_ID,
+                null,
+                "WHERE la." + DatabaseHelper.COL_LA_USER_ID + "='" + userId + "' " +
+                        "ORDER BY la." + DatabaseHelper.COL_LA_ADDED_AT + " DESC");
+    }
+
     public Optional<Album> findById(String id) {
         List<Album> list = query("WHERE a." + DatabaseHelper.COL_ALBUM_ID + "=?", new String[]{id}, null);
         return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));

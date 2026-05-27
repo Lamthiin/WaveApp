@@ -69,6 +69,15 @@
         <activity
             android:name=".MusicPlayerActivity"
             android:exported="false" />
+        <activity
+            android:name=".LikedSongsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FavoriteArtistsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FavoriteAlbumsActivity"
+            android:exported="false" />
 
         <service
             android:name=".MusicPlayerService"

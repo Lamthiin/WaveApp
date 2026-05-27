@@ -9,18 +9,22 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ptithcm.waveapp.adapter.AlbumAdapter;
 import com.ptithcm.waveapp.adapter.ArtistAdapter;
+import com.ptithcm.waveapp.adapter.GenreAdapter;
 import com.ptithcm.waveapp.adapter.SongAdapter;
 import com.ptithcm.waveapp.model.Album;
 import com.ptithcm.waveapp.model.Artist;
+import com.ptithcm.waveapp.model.Genre;
 import com.ptithcm.waveapp.model.LikedAlbum;
 import com.ptithcm.waveapp.model.LikedSong;
 import com.ptithcm.waveapp.model.Song;
@@ -28,6 +32,7 @@ import com.ptithcm.waveapp.model.User;
 import com.ptithcm.waveapp.model.UserFollowArtist;
 import com.ptithcm.waveapp.repository.AlbumRepository;
 import com.ptithcm.waveapp.repository.ArtistRepository;
+import com.ptithcm.waveapp.repository.GenreRepository;
 import com.ptithcm.waveapp.repository.LikedAlbumRepository;
 import com.ptithcm.waveapp.repository.LikedSongRepository;
 import com.ptithcm.waveapp.repository.SongRepository;
@@ -37,6 +42,7 @@ import com.ptithcm.waveapp.util.TokenManager;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class SearchFragment extends Fragment {
 
@@ -51,14 +57,21 @@ public class SearchFragment extends Fragment {
     private SongAdapter songAdapter;
     private ArtistAdapter artistAdapter;
     private AlbumAdapter albumAdapter;
+    private GenreAdapter genreAdapter;
 
     private SongRepository songRepository;
     private ArtistRepository artistRepository;
     private AlbumRepository albumRepository;
+    private GenreRepository genreRepository;
     private LikedSongRepository likedSongRepository;
     private LikedAlbumRepository likedAlbumRepository;
     private UserFollowArtistRepository followRepository;
     private TokenManager tokenManager;
+
+    private List<Song> allSongs = new ArrayList<>();
+    private List<Artist> allArtists = new ArrayList<>();
+    private List<Album> allAlbums = new ArrayList<>();
+    private List<Genre> allGenres = new ArrayList<>();
 
     @Nullable
     @Override
@@ -70,6 +83,8 @@ public class SearchFragment extends Fragment {
         setupTabs();
         setupSearch();
 
+        loadInitialData();
+
         return view;
     }
 
@@ -78,6 +93,7 @@ public class SearchFragment extends Fragment {
         songRepository = locator.songRepository;
         artistRepository = locator.artistRepository;
         albumRepository = locator.albumRepository;
+        genreRepository = locator.genreRepository;
         likedSongRepository = locator.likedSongRepository;
         likedAlbumRepository = locator.likedAlbumRepository;
         followRepository = locator.userFollowArtistRepository;
@@ -93,11 +109,11 @@ public class SearchFragment extends Fragment {
         recyclerViewResults = view.findViewById(R.id.recyclerViewResults);
         emptyTextView = view.findViewById(R.id.emptyTextView);
 
-        recyclerViewResults.setLayoutManager(new LinearLayoutManager(getContext()));
-        
         songAdapter = new SongAdapter();
+        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.HEART);
         artistAdapter = new ArtistAdapter();
         albumAdapter = new AlbumAdapter();
+        genreAdapter = new GenreAdapter();
 
         setupAdapterListeners();
     }
@@ -106,6 +122,8 @@ public class SearchFragment extends Fragment {
         songAdapter.setOnSongClickListener(song -> {
             Intent intent = new Intent(getActivity(), MusicPlayerActivity.class);
             intent.putExtra("SONG_ID", song.getId());
+            intent.putExtra("SONG_DATA", song);
+            intent.putExtra("QUEUE_LIST", new ArrayList<>(allSongs));
             startActivity(intent);
         });
 
@@ -159,18 +177,33 @@ public class SearchFragment extends Fragment {
 
         albumAdapter.setOnLikeClickListener((album, position) -> {
             String userId = tokenManager.getUserId();
-            if (userId == null) return;
-            if (likedAlbumRepository.existsByUserIdAndAlbumId(userId, album.getId())) {
-                likedAlbumRepository.deleteByUserIdAndAlbumId(userId, album.getId());
-            } else {
-                LikedAlbum likedAlbum = LikedAlbum.builder()
-                        .user(User.builder().id(userId).build())
-                        .album(album)
-                        .addedAt(LocalDateTime.now().toString())
-                        .build();
-                likedAlbumRepository.save(likedAlbum);
+            if (userId == null) {
+                Toast.makeText(getContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+                return;
             }
-            albumAdapter.notifyItemChanged(position);
+            new Thread(() -> {
+                LikedAlbumRepository repo = ServiceLocator.getInstance().likedAlbumRepository;
+                if (repo.existsByUserIdAndAlbumId(userId, album.getId())) {
+                    repo.deleteByUserIdAndAlbumId(userId, album.getId());
+                } else {
+                    com.ptithcm.waveapp.model.User user = new com.ptithcm.waveapp.model.User();
+                    user.setId(userId);
+                    com.ptithcm.waveapp.model.LikedAlbum la = new com.ptithcm.waveapp.model.LikedAlbum();
+                    la.setUser(user);
+                    la.setAlbum(album);
+                    la.setAddedAt(java.time.LocalDateTime.now().toString());
+                    repo.save(la);
+                }
+                getActivity().runOnUiThread(() -> albumAdapter.notifyItemChanged(position));
+            }).start();
+        });
+
+        genreAdapter.setOnGenreClickListener(genre -> {
+            Intent intent = new Intent(getActivity(), SongsByCategoryActivity.class);
+            intent.putExtra("GENRE_ID", genre.getId());
+            intent.putExtra("GENRE_NAME", genre.getName());
+            intent.putExtra("GENRE_IMAGE_URL", genre.getImageUrl());
+            startActivity(intent);
         });
     }
 
@@ -182,9 +215,11 @@ public class SearchFragment extends Fragment {
     }
 
     private void selectTab(SearchTab tab) {
+        if (currentTab == tab) return;
         currentTab = tab;
+        searchEditText.setText(""); // Reset keyword
         updateTabUI();
-        performSearch(searchEditText.getText().toString());
+        loadInitialData();
     }
 
     private void updateTabUI() {
@@ -211,41 +246,98 @@ public class SearchFragment extends Fragment {
         });
     }
 
+    private void loadInitialData() {
+        new Thread(() -> {
+            switch (currentTab) {
+                case SONGS:
+                    allSongs = songRepository.findAll();
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        recyclerViewResults.setLayoutManager(new LinearLayoutManager(getContext()));
+                        songAdapter.setSongs(allSongs);
+                        recyclerViewResults.setAdapter(songAdapter);
+                        toggleEmptyView(allSongs.isEmpty(), "Không có bài hát");
+                    });
+                    break;
+                case ARTISTS:
+                    allArtists = artistRepository.findByActiveTrue();
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
+                        artistAdapter.setArtists(allArtists);
+                        recyclerViewResults.setAdapter(artistAdapter);
+                        toggleEmptyView(allArtists.isEmpty(), "Không có nghệ sĩ");
+                    });
+                    break;
+                case ALBUMS:
+                    allAlbums = albumRepository.findByActiveTrue();
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
+                        albumAdapter.setAlbums(allAlbums);
+                        recyclerViewResults.setAdapter(albumAdapter);
+                        toggleEmptyView(allAlbums.isEmpty(), "Không có album");
+                    });
+                    break;
+                case GENRES:
+                    allGenres = genreRepository.findAll();
+                    if (getActivity() == null) return;
+                    getActivity().runOnUiThread(() -> {
+                        recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
+                        genreAdapter.setGenres(allGenres);
+                        recyclerViewResults.setAdapter(genreAdapter);
+                        toggleEmptyView(allGenres.isEmpty(), "Không có thể loại");
+                    });
+                    break;
+            }
+        }).start();
+    }
+
     private void performSearch(String query) {
-        if (query.isEmpty()) {
-            recyclerViewResults.setAdapter(null);
-            emptyTextView.setVisibility(View.GONE);
+        String lowerQuery = query.toLowerCase().trim();
+        if (lowerQuery.isEmpty()) {
+            loadInitialData();
             return;
         }
 
         switch (currentTab) {
             case SONGS:
-                List<Song> songs = songRepository.searchByName(query);
-                songAdapter.setSongs(songs);
-                recyclerViewResults.setAdapter(songAdapter);
-                toggleEmptyView(songs.isEmpty());
+                List<Song> filteredSongs = allSongs.stream()
+                        .filter(s -> (s.getName() != null && s.getName().toLowerCase().contains(lowerQuery)) ||
+                                     (s.getArtist() != null && s.getArtist().getName() != null && s.getArtist().getName().toLowerCase().contains(lowerQuery)) ||
+                                     (s.getAlbum() != null && s.getAlbum().getName() != null && s.getAlbum().getName().toLowerCase().contains(lowerQuery)))
+                        .collect(Collectors.toList());
+                songAdapter.setSongs(filteredSongs);
+                toggleEmptyView(filteredSongs.isEmpty(), "Không tìm thấy bài hát phù hợp");
                 break;
             case ARTISTS:
-                List<Artist> artists = artistRepository.searchByName(query);
-                artistAdapter.setArtists(artists);
-                recyclerViewResults.setAdapter(artistAdapter);
-                toggleEmptyView(artists.isEmpty());
+                List<Artist> filteredArtists = allArtists.stream()
+                        .filter(a -> a.getName() != null && a.getName().toLowerCase().contains(lowerQuery))
+                        .collect(Collectors.toList());
+                artistAdapter.setArtists(filteredArtists);
+                toggleEmptyView(filteredArtists.isEmpty(), "Không tìm thấy nghệ sĩ phù hợp");
                 break;
             case ALBUMS:
-                List<Album> albums = albumRepository.searchByName(query);
-                albumAdapter.setAlbums(albums);
-                recyclerViewResults.setAdapter(albumAdapter);
-                toggleEmptyView(albums.isEmpty());
+                List<Album> filteredAlbums = allAlbums.stream()
+                        .filter(al -> (al.getName() != null && al.getName().toLowerCase().contains(lowerQuery)) ||
+                                      (al.getArtist() != null && al.getArtist().getName() != null && al.getArtist().getName().toLowerCase().contains(lowerQuery)))
+                        .collect(Collectors.toList());
+                albumAdapter.setAlbums(filteredAlbums);
+                toggleEmptyView(filteredAlbums.isEmpty(), "Không tìm thấy album phù hợp");
                 break;
             case GENRES:
-                // Thể loại thường ít, có thể search local hoặc từ repo
-                // Hiện tại hiển thị trống hoặc danh sách gợi ý
-                toggleEmptyView(true);
+                List<Genre> filteredGenres = allGenres.stream()
+                        .filter(g -> g.getName() != null && g.getName().toLowerCase().contains(lowerQuery))
+                        .collect(Collectors.toList());
+                genreAdapter.setGenres(filteredGenres);
+                toggleEmptyView(filteredGenres.isEmpty(), "Không tìm thấy thể loại phù hợp");
                 break;
         }
     }
 
-    private void toggleEmptyView(boolean isEmpty) {
+    private void toggleEmptyView(boolean isEmpty, String message) {
+        emptyTextView.setText(message);
         emptyTextView.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        recyclerViewResults.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
     }
 }

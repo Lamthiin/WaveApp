@@ -241,6 +241,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
     private void openMusicPlayer(Song song) {
         Intent intent = new Intent(this, MusicPlayerActivity.class);
         intent.putExtra("SONG_DATA", song);
+        intent.putExtra("QUEUE_LIST", new ArrayList<>(songList));
         startActivity(intent);
     }
 

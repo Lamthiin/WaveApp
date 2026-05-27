@@ -53,6 +53,10 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
             musicService = binder.getService();
             serviceBound = true;
             musicService.setPlaybackCallback(BaseMiniPlayerActivity.this);
+            musicService.setNavigationCallback(new MusicPlayerService.NavigationCallback() {
+                @Override public void onSkipToPrevious() { runOnUiThread(() -> playMiniSongByDirection(-1)); }
+                @Override public void onSkipToNext()     { runOnUiThread(() -> playMiniSongByDirection(1)); }
+            });
             updateMiniPlayerFromService();
             loadPlaybackQueue(musicService.getCurrentSongId());
         }
@@ -286,5 +290,10 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
     @Override
     public void onPlaybackStateChanged(boolean isPlaying) {
         updateMiniPlayerFromService();
+    }
+
+    @Override
+    public void onRepeatModeChanged(boolean isRepeatOne) {
+        // Có thể cập nhật UI nếu mini player có nút repeat
     }
 }

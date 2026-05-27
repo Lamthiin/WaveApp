@@ -69,6 +69,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumViewHol
                 isLiked = com.ptithcm.waveapp.ServiceLocator.getInstance().likedAlbumRepository.existsByUserIdAndAlbumId(userId, album.getId());
             }
             holder.btnLike.setImageResource(isLiked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+            holder.btnLike.setColorFilter(isLiked ? android.graphics.Color.parseColor("#1DB954") : android.graphics.Color.WHITE);
 
             holder.btnLike.setOnClickListener(v -> {
                 if (onLikeClick != null) onLikeClick.onLikeClick(album, position);
@@ -88,7 +89,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumViewHol
             imgAlbum    = itemView.findViewById(R.id.imgAlbum);
             tvAlbumName = itemView.findViewById(R.id.tvAlbumName);
             tvArtistName = itemView.findViewById(R.id.tvArtistName);
-            btnLike     = itemView.findViewById(R.id.favoriteButton);
+            btnLike     = itemView.findViewById(R.id.btnLike);
         }
     }
 }

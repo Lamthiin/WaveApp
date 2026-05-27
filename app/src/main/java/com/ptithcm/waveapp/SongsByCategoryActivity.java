@@ -75,6 +75,7 @@ public class SongsByCategoryActivity extends BaseMiniPlayerActivity {
         songAdapter.setOnSongClickListener(song -> {
             Intent intent = new Intent(this, MusicPlayerActivity.class);
             intent.putExtra("SONG_DATA", song);
+            intent.putExtra("QUEUE_LIST", new ArrayList<>(allSongs));
             startActivity(intent);
         });
 

@@ -206,6 +206,17 @@
             android:contentDescription="@string/next" />
 
         <ImageButton
+            android:id="@+id/btnRepeat"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:padding="12dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_repeat"
+            app:tint="#FFFFFF"
+            android:contentDescription="@string/repeat" />
+
+        <ImageButton
             android:id="@+id/btnTimer"
             android:layout_width="50dp"
             android:layout_height="50dp"

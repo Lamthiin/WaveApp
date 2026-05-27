@@ -9,11 +9,11 @@
     android:padding="12dp">
 
     <ImageView
-        android:id="@+id/ivSearchSongThumbnail"
+        android:id="@+id/imgSong"
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/sontung" />
+        android:src="@drawable/ic_music_note" />
 
     <LinearLayout
         android:layout_width="0dp"
@@ -23,29 +23,31 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/tvSearchSongTitle"
+            android:id="@+id/tvSongTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hãy Trao Cho Anh"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="@color/white"
             android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvSearchSongArtist"
+            android:id="@+id/tvArtistName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sơn Tùng M-TP"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textColor="@color/gray_text"
             android:textSize="14sp" />
     </LinearLayout>
 
     <ImageButton
-        android:id="@+id/btnLikeSong"
+        android:id="@+id/favoriteButton"
         android:layout_width="32dp"
         android:layout_height="32dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/btn_star_big_off"
+        android:src="@drawable/ic_heart_outline"
         app:tint="@color/white" />
 
 </LinearLayout>

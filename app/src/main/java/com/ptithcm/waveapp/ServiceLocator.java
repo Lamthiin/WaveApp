@@ -64,7 +64,7 @@ public class ServiceLocator {
         homeService        = new HomeService(albumRepository, artistRepository, genreRepository, songRepository);
         categoryService    = new CategoryService(genreRepository, songRepository);
         playlistService    = new PlaylistService(playlistRepository, playlistSongRepository, songRepository, userRepository, likedSongRepository);
-        userProfileService = new UserProfileService(userRepository, likedSongRepository, likedAlbumRepository, userFollowArtistRepository, playlistRepository);
+        userProfileService = new UserProfileService(userRepository, likedSongRepository, likedAlbumRepository, userFollowArtistRepository, playlistRepository, songRepository, albumRepository);
     }
 
     public static synchronized void init(Context context) {
