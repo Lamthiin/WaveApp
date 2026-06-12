@@ -171,4 +171,50 @@ public class UserRepository {
             }
         }
     }
+
+    // 1. Lấy tất cả người dùng để hiển thị lên màn hình Admin
+    public java.util.List<User> getAllUsers() {
+        java.util.List<User> userList = new java.util.ArrayList<>();
+
+        // Truy vấn lấy toàn bộ dữ liệu từ bảng users
+        Cursor c = db.rawQuery("SELECT * FROM " + DatabaseHelper.TABLE_USERS, null);
+
+        if (c != null && c.moveToFirst()) {
+            do {
+                // Tận dụng hàm map() bạn đã viết để chuyển Cursor thành đối tượng User
+                userList.add(map(c));
+            } while (c.moveToNext());
+        }
+
+        if (c != null) {
+            c.close();
+        }
+        return userList;
+    }
+
+    // 2. Xóa người dùng dựa vào ID
+    public boolean deleteUser(String userId) {
+        int rowsDeleted = db.delete(
+                DatabaseHelper.TABLE_USERS,
+                DatabaseHelper.COL_USER_ID + "=?",
+                new String[]{userId}
+        );
+        // Nếu số dòng bị xóa > 0 nghĩa là xóa thành công
+        return rowsDeleted > 0;
+    }
+
+    // 3. Cập nhật quyền (Role) cho người dùng
+    public boolean updateUserRole(String userId, String newRole) {
+        ContentValues cv = new ContentValues();
+        cv.put(DatabaseHelper.COL_USER_ROLE, newRole);
+        cv.put(DatabaseHelper.COL_USER_UPDATED_AT, LocalDateTime.now().toString());
+
+        int rowsUpdated = db.update(
+                DatabaseHelper.TABLE_USERS,
+                cv,
+                DatabaseHelper.COL_USER_ID + "=?",
+                new String[]{userId}
+        );
+        return rowsUpdated > 0;
+    }
 }

@@ -14,6 +14,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
+import com.ptithcm.waveapp.AdminUserManagementActivity;
 import com.ptithcm.waveapp.MainActivity;
 import com.ptithcm.waveapp.R;
 import com.ptithcm.waveapp.database.DatabaseHelper;
@@ -40,7 +41,15 @@ public class LoginActivity extends AppCompatActivity {
         userRepository = new UserRepository(dbHelper);
 
         if (tokenManager.isLoggedIn()) {
-            Intent intent = new Intent(this, MainActivity.class);
+            String role = tokenManager.getRole();
+
+            Intent intent;
+            if (role != null && role.equalsIgnoreCase("ADMIN")) {
+                intent = new Intent(this, AdminUserManagementActivity.class);
+            } else {
+                intent = new Intent(this, MainActivity.class);
+            }
+
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();

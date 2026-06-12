@@ -66,6 +66,11 @@
         <activity
             android:name=".MainActivity"
             android:exported="true" />
+
+        <activity
+            android:name=".AdminUserManagementActivity"
+            android:exported="false" />
+
         <activity
             android:name=".MusicPlayerActivity"
             android:exported="false" />

@@ -7,6 +7,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
+import com.ptithcm.waveapp.AdminUserManagementActivity;
 import com.ptithcm.waveapp.MainActivity;
 import com.ptithcm.waveapp.R;
 import com.ptithcm.waveapp.database.DatabaseHelper;
@@ -77,9 +78,21 @@ public class LoginEmailActivity extends AppCompatActivity {
                             user.getEmail(), user.getAvatar(), user.getRole()
                     );
                     Toast.makeText(this, "Chào mừng " + user.getName(), Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(this, MainActivity.class)
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+
+                    Intent intent;
+                    if (user.getRole() != null && user.getRole().equalsIgnoreCase("ADMIN")) {
+                        // Nếu là Admin -> Chuyển hướng sang màn hình Admin
+                        intent = new Intent(this, AdminUserManagementActivity.class);
+                    } else {
+                        // Nếu là User -> Chuyển hướng sang MainActivity
+                        intent = new Intent(this, MainActivity.class);
+                    }
+
+                    // Thêm cờ để xóa lịch sử màn hình đăng nhập
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
                     finish();
+                    // 🔥 KẾT THÚC PHẦN SỬA
                 });
 
             } catch (RuntimeException e) {
