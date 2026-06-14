@@ -23,6 +23,7 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 import com.ptithcm.waveapp.adapter.AdminOverviewAdapter;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.ptithcm.waveapp.model.Artist;
@@ -53,6 +54,7 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
     private ImageView dialogArtistPreview;
     private MaterialButton dialogChooseArtistImageButton;
     private String pendingArtistImageUrl;
+    private Uri pendingArtistImageUri;
     private RecyclerView recyclerView;
     private FloatingActionButton fabAdd;
     private int visibleItemCount;
@@ -72,7 +74,8 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
                 new ActivityResultContracts.GetContent(),
                 uri -> {
                     if (uri != null) {
-                        uploadArtistImage(uri);
+                        pendingArtistImageUri = uri;
+                        bindArtistImagePreview(uri);
                     }
                 }
         );
@@ -189,9 +192,9 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
     }
 
     private void updateFilterUI(TextView active, TextView inactive) {
-        active.setBackgroundColor(Color.parseColor("#1DB954"));
+        active.setBackgroundResource(R.drawable.bg_admin_tab_active);
         active.setTextColor(Color.parseColor("#FFFFFF"));
-        inactive.setBackgroundColor(Color.parseColor("#282828"));
+        inactive.setBackgroundResource(R.drawable.bg_admin_tab_inactive);
         inactive.setTextColor(Color.parseColor("#B3B3B3"));
     }
 
@@ -222,7 +225,8 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
                     meta,
                     artist.getImage(),
                     R.drawable.ic_logo,
-                    TAB_HIDDEN.equals(currentArtistTab)
+                    TAB_HIDDEN.equals(currentArtistTab),
+                    true
             ));
             displayIndex++;
         }
@@ -280,6 +284,7 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
         MaterialButton btnSave = dialogView.findViewById(R.id.btnSaveArtistDialog);
 
         pendingArtistImageUrl = "";
+        pendingArtistImageUri = null;
         if (artist != null) {
             etArtistName.setText(artist.getName());
             etArtistBio.setText(artist.getBio());
@@ -294,7 +299,8 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
                 .create();
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
-        btnSave.setText(artist == null ? "Thêm" : "Lưu");
+        String saveLabel = artist == null ? "Thêm" : "Lưu";
+        btnSave.setText(saveLabel);
         btnSave.setOnClickListener(v -> {
             String name = etArtistName.getText().toString().trim();
             String bio = etArtistBio.getText().toString().trim();
@@ -304,18 +310,17 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
                 return;
             }
 
-            if (artist == null) {
-                artistRepository.createArtist(name, pendingArtistImageUrl, bio);
-                currentArtistTab = TAB_ACTIVE;
-                updateTabUI();
-                Toast.makeText(this, "Đã thêm nghệ sĩ mới", Toast.LENGTH_SHORT).show();
-            } else {
-                boolean updated = artistRepository.updateArtist(artist.getId(), name, pendingArtistImageUrl, bio);
-                Toast.makeText(this, updated ? "Đã cập nhật nghệ sĩ" : "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
+            btnSave.setEnabled(false);
+            btnCancel.setEnabled(false);
+            dialogChooseArtistImageButton.setEnabled(false);
+            btnSave.setText(artist == null ? "Đang thêm..." : "Đang lưu...");
+
+            if (pendingArtistImageUri != null) {
+                ensureFirebaseAuthForUpload(artist, name, bio, dialog, btnSave, btnCancel, saveLabel);
+                return;
             }
 
-            loadArtists();
-            dialog.dismiss();
+            persistArtist(artist, name, bio, pendingArtistImageUrl, dialog, btnSave, btnCancel);
         });
 
         dialog.show();
@@ -324,52 +329,90 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
         }
     }
 
-    private void bindArtistImagePreview(String imageUrl) {
+    private void bindArtistImagePreview(Object imageSource) {
         if (dialogArtistPreview == null) {
             return;
         }
 
         Glide.with(this)
-                .load(imageUrl)
+                .load(imageSource)
                 .placeholder(R.drawable.ic_logo)
                 .error(R.drawable.ic_logo)
                 .centerCrop()
                 .into(dialogArtistPreview);
     }
 
-    private void uploadArtistImage(Uri selectedUri) {
-        if (dialogChooseArtistImageButton == null) {
+    private void ensureFirebaseAuthForUpload(Artist artist, String name, String bio, AlertDialog dialog,
+                                             MaterialButton btnSave, MaterialButton btnCancel, String saveLabel) {
+        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
+        if (firebaseAuth.getCurrentUser() != null) {
+            uploadArtistImageToStorage(artist, name, bio, dialog, btnSave, btnCancel, saveLabel);
             return;
         }
 
-        dialogChooseArtistImageButton.setEnabled(false);
-        dialogChooseArtistImageButton.setText("Đang tải ảnh...");
+        firebaseAuth.signInAnonymously()
+                .addOnSuccessListener(authResult ->
+                        uploadArtistImageToStorage(artist, name, bio, dialog, btnSave, btnCancel, saveLabel))
+                .addOnFailureListener(e -> {
+                    restoreArtistDialogActions(btnSave, btnCancel, saveLabel);
+                    Toast.makeText(this, "Đăng nhập Firebase thất bại: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void uploadArtistImageToStorage(Artist artist, String name, String bio, AlertDialog dialog,
+                                            MaterialButton btnSave, MaterialButton btnCancel, String saveLabel) {
+        if (pendingArtistImageUri == null) {
+            persistArtist(artist, name, bio, pendingArtistImageUrl, dialog, btnSave, btnCancel);
+            return;
+        }
 
         StorageReference imageRef = FirebaseStorage.getInstance()
                 .getReference()
                 .child("artist_avatars/admin_" + UUID.randomUUID() + ".jpg");
 
-        imageRef.putFile(selectedUri)
+        imageRef.putFile(pendingArtistImageUri)
                 .addOnSuccessListener(taskSnapshot ->
                         imageRef.getDownloadUrl()
                                 .addOnSuccessListener(downloadUri -> {
                                     pendingArtistImageUrl = downloadUri.toString();
-                                    bindArtistImagePreview(pendingArtistImageUrl);
-                                    dialogChooseArtistImageButton.setEnabled(true);
-                                    dialogChooseArtistImageButton.setText("Chọn ảnh từ máy");
-                                    Toast.makeText(this, "Tải ảnh thành công", Toast.LENGTH_SHORT).show();
+                                    pendingArtistImageUri = null;
+                                    persistArtist(artist, name, bio, pendingArtistImageUrl, dialog, btnSave, btnCancel);
                                 })
                                 .addOnFailureListener(e -> {
-                                    dialogChooseArtistImageButton.setEnabled(true);
-                                    dialogChooseArtistImageButton.setText("Chọn ảnh từ máy");
+                                    restoreArtistDialogActions(btnSave, btnCancel, saveLabel);
                                     Toast.makeText(this, "Không lấy được link ảnh: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                 })
                 )
                 .addOnFailureListener(e -> {
-                    dialogChooseArtistImageButton.setEnabled(true);
-                    dialogChooseArtistImageButton.setText("Chọn ảnh từ máy");
+                    restoreArtistDialogActions(btnSave, btnCancel, saveLabel);
                     Toast.makeText(this, "Upload ảnh thất bại: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void persistArtist(Artist artist, String name, String bio, String imageUrl, AlertDialog dialog,
+                               MaterialButton btnSave, MaterialButton btnCancel) {
+        if (artist == null) {
+            artistRepository.createArtist(name, imageUrl, bio);
+            currentArtistTab = TAB_ACTIVE;
+            updateTabUI();
+            Toast.makeText(this, "Đã thêm nghệ sĩ mới", Toast.LENGTH_SHORT).show();
+        } else {
+            boolean updated = artistRepository.updateArtist(artist.getId(), name, imageUrl, bio);
+            Toast.makeText(this, updated ? "Đã cập nhật nghệ sĩ" : "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
+        }
+
+        loadArtists();
+        dialog.dismiss();
+    }
+
+    private void restoreArtistDialogActions(MaterialButton btnSave, MaterialButton btnCancel, String saveLabel) {
+        btnSave.setEnabled(true);
+        btnCancel.setEnabled(true);
+        if (dialogChooseArtistImageButton != null) {
+            dialogChooseArtistImageButton.setEnabled(true);
+            dialogChooseArtistImageButton.setText("Chọn ảnh từ máy");
+        }
+        btnSave.setText(saveLabel);
     }
 
     private void confirmHideArtist(Artist artist) {

@@ -187,6 +187,7 @@ public class AdminSongManagementActivity extends BaseAdminActivity {
                     meta,
                     song.getImage(),
                     R.drawable.ic_music_note,
+                    false,
                     false
             ));
             displayIndex++;

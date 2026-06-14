@@ -81,6 +81,7 @@ public class AdminAlbumManagementActivity extends BaseAdminActivity {
                     meta,
                     album.getImage(),
                     R.drawable.ic_logo,
+                    false,
                     false
             ));
         }
