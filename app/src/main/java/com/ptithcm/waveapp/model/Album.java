@@ -16,6 +16,7 @@ public class Album implements Serializable {
     private Artist artist;
     private String image;           // path file anh, KHONG phai byte[]
     private LocalDate releaseDate;
+    @Builder.Default private long playCount = 0;
     @Builder.Default private boolean active = true;
     private LocalDateTime createdAt;
     // XOA getImagePath() tra byte[] - sai kieu va than ham rong gay loi bien dich

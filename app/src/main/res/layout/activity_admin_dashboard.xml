@@ -63,43 +63,72 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvAdminGreeting"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tvAdminSubtitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="Tổng quan nhanh cho khu vực quản trị Wave."
-                android:textColor="#B3B3B3"
-                android:textSize="13sp" />
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:orientation="horizontal">
+                android:background="@drawable/bg_admin_profile_card"
+                android:orientation="vertical"
+                android:padding="18dp">
+
+                <TextView
+                    android:id="@+id/tvAdminGreeting"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="#FFFFFF"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvAdminSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Tổng quan điều hành hệ thống Wave trong hôm nay."
+                    android:textColor="#B3B3B3"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/tvDashboardSpotlight"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/bg_admin_role_badge"
+                    android:paddingStart="12dp"
+                    android:paddingTop="8dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="8dp"
+                    android:text="Đang tải dữ liệu nổi bật..."
+                    android:textColor="#1DB954"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <GridLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:alignmentMode="alignMargins"
+                android:columnCount="2"
+                android:useDefaultMargins="false">
 
                 <LinearLayout
+                    android:id="@+id/cardUsers"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="136dp"
+                    android:layout_columnWeight="1"
                     android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
+                    android:layout_marginBottom="8dp"
                     android:background="@drawable/bg_admin_profile_card"
-                    android:gravity="bottom"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:orientation="vertical"
                     android:padding="16dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="User"
+                        android:text="Người dùng"
                         android:textColor="#B3B3B3"
                         android:textSize="13sp" />
 
@@ -107,20 +136,35 @@
                         android:id="@+id/tvUsersCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="0"
                         android:textColor="#FFFFFF"
-                        android:textSize="28sp"
+                        android:textSize="30sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvUsersCaption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:text="Tài khoản đang lưu trong hệ thống"
+                        android:textColor="#8A8A8A"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/cardArtists"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="136dp"
+                    android:layout_columnWeight="1"
                     android:layout_marginStart="8dp"
-                    android:layout_weight="1"
+                    android:layout_marginBottom="8dp"
                     android:background="@drawable/bg_admin_profile_card"
-                    android:gravity="bottom"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:orientation="vertical"
                     android:padding="16dp">
 
@@ -135,27 +179,35 @@
                         android:id="@+id/tvArtistsCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="0"
                         android:textColor="#FFFFFF"
-                        android:textSize="28sp"
+                        android:textSize="30sp"
                         android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="horizontal">
+                    <TextView
+                        android:id="@+id/tvArtistsCaption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:text="Nghệ sĩ đang active"
+                        android:textColor="#8A8A8A"
+                        android:textSize="12sp" />
+                </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/cardSongs"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="136dp"
+                    android:layout_columnWeight="1"
                     android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
+                    android:layout_marginTop="8dp"
                     android:background="@drawable/bg_admin_profile_card"
-                    android:gravity="bottom"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:orientation="vertical"
                     android:padding="16dp">
 
@@ -170,20 +222,35 @@
                         android:id="@+id/tvSongsCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="0"
                         android:textColor="#FFFFFF"
-                        android:textSize="28sp"
+                        android:textSize="30sp"
                         android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvSongsCaption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:text="Tổng bài hát hiện có"
+                        android:textColor="#8A8A8A"
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/cardAlbums"
                     android:layout_width="0dp"
-                    android:layout_height="120dp"
+                    android:layout_height="136dp"
+                    android:layout_columnWeight="1"
                     android:layout_marginStart="8dp"
-                    android:layout_weight="1"
+                    android:layout_marginTop="8dp"
                     android:background="@drawable/bg_admin_profile_card"
-                    android:gravity="bottom"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:orientation="vertical"
                     android:padding="16dp">
 
@@ -198,12 +265,158 @@
                         android:id="@+id/tvAlbumsCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="12dp"
                         android:text="0"
                         android:textColor="#FFFFFF"
-                        android:textSize="28sp"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvGenresCount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:text="0 thể loại"
+                        android:textColor="#8A8A8A"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </GridLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="136dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_admin_profile_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bài hát nổi bật"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTopSongName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTopSongMeta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:textColor="#1DB954"
+                        android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="136dp"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_admin_profile_card"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Nghệ sĩ nổi bật"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTopArtistName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvTopArtistMeta"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:maxLines="2"
+                        android:minLines="2"
+                        android:textColor="#1DB954"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/bg_admin_profile_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Top bài hát theo lượt nghe"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/layoutTopSongs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_admin_profile_card"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Album được nghe nhiều nhất"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/layoutTopAlbums"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
             </LinearLayout>
 
             <LinearLayout
@@ -218,18 +431,17 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Điều hướng quản trị"
+                    android:text="Nghệ sĩ follower cao"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/layoutTopArtists"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Bottom navigation bên dưới đã được sắp theo thứ tự: Dashboard, User, Nghệ sĩ, Bài hát, Album."
-                    android:textColor="#B3B3B3"
-                    android:textSize="13sp" />
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

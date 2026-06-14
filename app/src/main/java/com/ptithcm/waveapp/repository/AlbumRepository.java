@@ -108,6 +108,9 @@ public class AlbumRepository {
             try { album.setReleaseDate(java.time.LocalDate.parse(c.getString(rdCol))); } catch (Exception ignored) {}
         }
         int pcCol = c.getColumnIndex(DatabaseHelper.COL_ALBUM_PLAY_COUNT);
+        if (pcCol != -1 && !c.isNull(pcCol)) {
+            album.setPlayCount(c.getLong(pcCol));
+        }
         return album;
     }
 }
