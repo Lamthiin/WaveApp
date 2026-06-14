@@ -8,31 +8,26 @@ import android.text.TextWatcher;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.ptithcm.waveapp.R;
-
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.ptithcm.waveapp.adapter.UserAdminAdapter;
 import com.ptithcm.waveapp.database.DatabaseHelper;
 import com.ptithcm.waveapp.model.User;
 import com.ptithcm.waveapp.repository.UserRepository;
-import com.ptithcm.waveapp.util.TokenManager;
-
+import com.ptithcm.waveapp.util.SearchNormalizer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AdminUserManagementActivity extends AppCompatActivity {
+public class AdminUserManagementActivity extends BaseAdminActivity {
 
     private EditText etSearchUser;
     private TextView filterAll, filterAdmin, filterUser;
+    private TextView tvAdminAvatar;
     private RecyclerView rvUsers;
 
     private UserAdminAdapter adapter;
     private UserRepository userRepository;
-    private TokenManager tokenManager;
 
     // Danh sách gốc chứa tất cả user từ Database
     private List<User> allUsersList = new ArrayList<>();
@@ -48,9 +43,15 @@ public class AdminUserManagementActivity extends AppCompatActivity {
         // Khởi tạo Database và TokenManager
         DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
         userRepository = new UserRepository(dbHelper);
-        tokenManager = new TokenManager(this);
 
         initViews();
+        setupAdminChrome(
+                R.id.tvHeaderTitle,
+                R.id.tvAdminAvatar,
+                R.id.bottomAdminNavigation,
+                R.id.nav_admin_users,
+                "Quản lý người dùng"
+        );
         setupRecyclerView();
         setupFilters();
         setupSearch();
@@ -64,6 +65,7 @@ public class AdminUserManagementActivity extends AppCompatActivity {
         filterAll = findViewById(R.id.filterAll);
         filterAdmin = findViewById(R.id.filterAdmin);
         filterUser = findViewById(R.id.filterUser);
+        tvAdminAvatar = findViewById(R.id.tvAdminAvatar);
         rvUsers = findViewById(R.id.rvUsers);
     }
 
@@ -142,15 +144,15 @@ public class AdminUserManagementActivity extends AppCompatActivity {
     // Xử lý đồng thời cả việc gõ chữ Tìm Kiếm và bấm nút Lọc
     private void applySearchAndFilter(String query) {
         List<User> filteredList = new ArrayList<>();
-        String lowerCaseQuery = query.toLowerCase().trim();
 
         for (User user : allUsersList) {
             // Kiểm tra an toàn cho tên và email null
-            String name = user.getName() != null ? user.getName().toLowerCase() : "";
-            String email = user.getEmail() != null ? user.getEmail().toLowerCase() : "";
+            String name = user.getName() != null ? user.getName() : "";
+            String email = user.getEmail() != null ? user.getEmail() : "";
 
             // 1. Kiểm tra điều kiện tìm kiếm (Tên hoặc Email)
-            boolean matchesSearch = name.contains(lowerCaseQuery) || email.contains(lowerCaseQuery);
+            boolean matchesSearch = SearchNormalizer.containsNormalized(name, query)
+                    || SearchNormalizer.containsNormalized(email, query);
 
             // 2. Kiểm tra điều kiện Role
             boolean matchesRole = currentRoleFilter.equals("ALL") ||

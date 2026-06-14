@@ -8,6 +8,7 @@ import com.ptithcm.waveapp.model.Artist;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public class ArtistRepository {
 
@@ -19,18 +20,23 @@ public class ArtistRepository {
 
     public List<Artist> findByActiveTrue() { return findAll(); }
 
+    public List<Artist> findByHidden() { return findAllByActive(false); }
+
     public List<Artist> searchByName(String kw) {
         List<Artist> list = new ArrayList<>();
         Cursor c = db.query(DatabaseHelper.TABLE_ARTISTS, null,
-                DatabaseHelper.COL_ARTIST_NAME + " LIKE ?",
-                new String[]{"%" + kw + "%"}, null, null, null);
+                DatabaseHelper.COL_ARTIST_NAME + " LIKE ? AND " + DatabaseHelper.COL_ARTIST_ACTIVE + "=?",
+                new String[]{"%" + kw + "%", "1"}, null, null, null);
         if (c != null && c.moveToFirst()) { do { list.add(map(c)); } while (c.moveToNext()); c.close(); }
         return list;
     }
 
     public List<Artist> findTopArtists() {
         List<Artist> list = new ArrayList<>();
-        Cursor c = db.query(DatabaseHelper.TABLE_ARTISTS, null, null, null, null, null,
+        Cursor c = db.query(DatabaseHelper.TABLE_ARTISTS, null,
+                DatabaseHelper.COL_ARTIST_ACTIVE + "=?",
+                new String[]{"1"},
+                null, null,
                 DatabaseHelper.COL_ARTIST_FOLLOWERS + " DESC", "10");
         if (c != null && c.moveToFirst()) { do { list.add(map(c)); } while (c.moveToNext()); c.close(); }
         return list;
@@ -50,7 +56,58 @@ public class ArtistRepository {
         cv.put(DatabaseHelper.COL_ARTIST_NAME, artist.getName());
         cv.put(DatabaseHelper.COL_ARTIST_IMAGE, artist.getImage());
         cv.put(DatabaseHelper.COL_ARTIST_BIO, artist.getBio());
+        cv.put(DatabaseHelper.COL_ARTIST_FOLLOWERS, artist.getFollowersCount());
+        cv.put(DatabaseHelper.COL_ARTIST_ACTIVE, artist.isActive() ? 1 : 0);
         db.insertWithOnConflict(DatabaseHelper.TABLE_ARTISTS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+    }
+
+    public Artist createArtist(String name, String image, String bio) {
+        Artist artist = Artist.builder()
+                .id(generateArtistId())
+                .name(name)
+                .image(image)
+                .bio(bio)
+                .followersCount(0)
+                .active(true)
+                .build();
+        save(artist);
+        return artist;
+    }
+
+    public boolean updateArtist(String id, String name, String image, String bio) {
+        ContentValues cv = new ContentValues();
+        cv.put(DatabaseHelper.COL_ARTIST_NAME, name);
+        cv.put(DatabaseHelper.COL_ARTIST_IMAGE, image);
+        cv.put(DatabaseHelper.COL_ARTIST_BIO, bio);
+        int rows = db.update(DatabaseHelper.TABLE_ARTISTS, cv, DatabaseHelper.COL_ARTIST_ID + "=?", new String[]{id});
+        return rows > 0;
+    }
+
+    public boolean deleteArtist(String id) {
+        int rows = db.delete(DatabaseHelper.TABLE_ARTISTS, DatabaseHelper.COL_ARTIST_ID + "=?", new String[]{id});
+        return rows > 0;
+    }
+
+    public boolean hideArtist(String id) {
+        ContentValues cv = new ContentValues();
+        cv.put(DatabaseHelper.COL_ARTIST_ACTIVE, 0);
+        int rows = db.update(DatabaseHelper.TABLE_ARTISTS, cv, DatabaseHelper.COL_ARTIST_ID + "=?", new String[]{id});
+        return rows > 0;
+    }
+
+    public boolean restoreArtist(String id) {
+        ContentValues cv = new ContentValues();
+        cv.put(DatabaseHelper.COL_ARTIST_ACTIVE, 1);
+        int rows = db.update(DatabaseHelper.TABLE_ARTISTS, cv, DatabaseHelper.COL_ARTIST_ID + "=?", new String[]{id});
+        return rows > 0;
+    }
+
+    public int countAlbumsByArtist(String artistId) {
+        return countByColumn(DatabaseHelper.TABLE_ALBUMS, DatabaseHelper.COL_ALBUM_ARTIST_ID, artistId);
+    }
+
+    public int countSongsByArtist(String artistId) {
+        return countByColumn(DatabaseHelper.TABLE_SONGS, DatabaseHelper.COL_SONG_ARTIST_ID, artistId);
     }
 
     public void incrementFollowers(String id) {
@@ -66,10 +123,43 @@ public class ArtistRepository {
     }
 
     private List<Artist> findAll() {
+        return findAllByActive(true);
+    }
+
+    private List<Artist> findAllByActive(boolean active) {
         List<Artist> list = new ArrayList<>();
-        Cursor c = db.query(DatabaseHelper.TABLE_ARTISTS, null, null, null, null, null, null);
+        Cursor c = db.query(
+                DatabaseHelper.TABLE_ARTISTS,
+                null,
+                DatabaseHelper.COL_ARTIST_ACTIVE + "=?",
+                new String[]{active ? "1" : "0"},
+                null,
+                null,
+                null
+        );
         if (c != null && c.moveToFirst()) { do { list.add(map(c)); } while (c.moveToNext()); c.close(); }
         return list;
+    }
+
+    private int countByColumn(String tableName, String columnName, String value) {
+        Cursor c = db.rawQuery(
+                "SELECT COUNT(*) FROM " + tableName + " WHERE " + columnName + "=?",
+                new String[]{value}
+        );
+        try {
+            if (c != null && c.moveToFirst()) {
+                return c.getInt(0);
+            }
+            return 0;
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+        }
+    }
+
+    private String generateArtistId() {
+        return "a" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
 
     private Artist map(Cursor c) {
@@ -79,6 +169,7 @@ public class ArtistRepository {
                 .image(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_ARTIST_IMAGE)))
                 .bio(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_ARTIST_BIO)))
                 .followersCount(c.getInt(c.getColumnIndexOrThrow(DatabaseHelper.COL_ARTIST_FOLLOWERS)))
+                .active(c.getInt(c.getColumnIndexOrThrow(DatabaseHelper.COL_ARTIST_ACTIVE)) == 1)
                 .build();
     }
 }

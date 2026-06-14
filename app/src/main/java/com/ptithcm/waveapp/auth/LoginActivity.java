@@ -14,7 +14,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.material.button.MaterialButton;
-import com.ptithcm.waveapp.AdminUserManagementActivity;
+import com.ptithcm.waveapp.AdminDashboardActivity;
 import com.ptithcm.waveapp.MainActivity;
 import com.ptithcm.waveapp.R;
 import com.ptithcm.waveapp.database.DatabaseHelper;
@@ -45,7 +45,7 @@ public class LoginActivity extends AppCompatActivity {
 
             Intent intent;
             if (role != null && role.equalsIgnoreCase("ADMIN")) {
-                intent = new Intent(this, AdminUserManagementActivity.class);
+                intent = new Intent(this, AdminDashboardActivity.class);
             } else {
                 intent = new Intent(this, MainActivity.class);
             }

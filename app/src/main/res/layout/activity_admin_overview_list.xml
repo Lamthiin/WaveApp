@@ -15,7 +15,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:text="Quản lý người dùng"
+        android:text="Quản lý"
         android:textColor="#FFFFFF"
         android:textSize="22sp"
         android:textStyle="bold"
@@ -38,8 +38,7 @@
         android:textSize="17sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:ignore="UnusedAttribute" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/headerBottomBarrier"
@@ -49,14 +48,14 @@
         app:constraint_referenced_ids="tvHeaderTitle,tvAdminAvatar" />
 
     <EditText
-        android:id="@+id/etSearchUser"
+        android:id="@+id/etSearchAdmin"
         android:layout_width="0dp"
         android:layout_height="50dp"
         android:layout_marginTop="20dp"
         android:background="#282828"
         android:drawableStart="@android:drawable/ic_menu_search"
         android:drawablePadding="12dp"
-        android:hint="Tìm kiếm theo tên hoặc email..."
+        android:hint="Tìm kiếm..."
         android:inputType="text"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
@@ -67,14 +66,14 @@
         app:layout_constraintTop_toBottomOf="@id/headerBottomBarrier" />
 
     <HorizontalScrollView
-        android:id="@+id/hsvRoleFilter"
+        android:id="@+id/hsvStatusFilter"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/etSearchUser">
+        app:layout_constraintTop_toBottomOf="@id/etSearchAdmin">
 
         <LinearLayout
             android:layout_width="wrap_content"
@@ -82,57 +81,72 @@
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/filterAll"
+                android:id="@+id/filterActive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="#1DB954"
                 android:paddingStart="20dp"
-                android:paddingEnd="20dp"
                 android:paddingTop="8dp"
+                android:paddingEnd="20dp"
                 android:paddingBottom="8dp"
-                android:text="Tất cả"
+                android:text="Active"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/filterAdmin"
+                android:id="@+id/filterHidden"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:background="#282828"
                 android:paddingStart="20dp"
-                android:paddingEnd="20dp"
                 android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="ADMIN"
-                android:textColor="#B3B3B3" />
-
-            <TextView
-                android:id="@+id/filterUser"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:background="#282828"
-                android:paddingStart="20dp"
                 android:paddingEnd="20dp"
-                android:paddingTop="8dp"
                 android:paddingBottom="8dp"
-                android:text="USER"
+                android:text="Hidden"
                 android:textColor="#B3B3B3" />
         </LinearLayout>
     </HorizontalScrollView>
 
+    <TextView
+        android:id="@+id/tvSectionHint"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:textColor="#B3B3B3"
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/hsvStatusFilter"
+        tools:text="Danh sách nghệ sĩ hiện có trong hệ thống." />
+
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvUsers"
+        android:id="@+id/rvAdminList"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="14dp"
         android:layout_marginBottom="12dp"
         app:layout_constraintBottom_toTopOf="@id/bottomAdminNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hsvRoleFilter"
-        tools:listitem="@layout/item_user_admin" />
+        app:layout_constraintTop_toBottomOf="@id/tvSectionHint"
+        tools:listitem="@layout/item_admin_overview" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAdminAdd"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="92dp"
+        android:contentDescription="Thêm mới"
+        android:padding="12dp"
+        android:src="@drawable/ic_add"
+        android:visibility="gone"
+        app:backgroundTint="#1DB954"
+        app:fabCustomSize="48dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tint="#121212" />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomAdminNavigation"

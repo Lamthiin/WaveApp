@@ -7,7 +7,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
-import com.ptithcm.waveapp.AdminUserManagementActivity;
+import com.ptithcm.waveapp.AdminDashboardActivity;
 import com.ptithcm.waveapp.MainActivity;
 import com.ptithcm.waveapp.R;
 import com.ptithcm.waveapp.database.DatabaseHelper;
@@ -82,7 +82,7 @@ public class LoginEmailActivity extends AppCompatActivity {
                     Intent intent;
                     if (user.getRole() != null && user.getRole().equalsIgnoreCase("ADMIN")) {
                         // Nếu là Admin -> Chuyển hướng sang màn hình Admin
-                        intent = new Intent(this, AdminUserManagementActivity.class);
+                        intent = new Intent(this, AdminDashboardActivity.class);
                     } else {
                         // Nếu là User -> Chuyển hướng sang MainActivity
                         intent = new Intent(this, MainActivity.class);

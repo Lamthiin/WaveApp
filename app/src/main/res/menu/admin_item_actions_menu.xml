@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/action_view_detail"
+        android:title="Xem chi tiết" />
+
+    <item
+        android:id="@+id/action_edit"
+        android:title="Chỉnh sửa" />
+
+    <item
+        android:id="@+id/action_hide"
+        android:title="Ẩn nghệ sĩ" />
+
+    <item
+        android:id="@+id/action_restore"
+        android:title="Khôi phục nghệ sĩ" />
+</menu>

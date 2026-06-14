@@ -70,6 +70,21 @@
         <activity
             android:name=".AdminUserManagementActivity"
             android:exported="false" />
+        <activity
+            android:name=".AdminDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminArtistManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminSongManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminAlbumManagementActivity"
+            android:exported="false" />
+        <activity
+            android:name=".AdminArtistDetailActivity"
+            android:exported="false" />
 
         <activity
             android:name=".MusicPlayerActivity"

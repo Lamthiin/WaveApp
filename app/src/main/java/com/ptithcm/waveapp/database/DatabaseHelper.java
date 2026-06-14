@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME    = "wave_app.db";
-    private static final int    DATABASE_VERSION = 1;
+    private static final int    DATABASE_VERSION = 2;
 
     private static DatabaseHelper instance;
     public static synchronized DatabaseHelper getInstance(Context ctx) {
@@ -45,6 +45,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_ARTIST_IMAGE     = "image";
     public static final String COL_ARTIST_BIO       = "bio";
     public static final String COL_ARTIST_FOLLOWERS = "followers_count";
+    public static final String COL_ARTIST_ACTIVE    = "active";
 
     // genres
     public static final String COL_GENRE_ID          = "id";
@@ -132,7 +133,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_ARTIST_NAME + " TEXT NOT NULL," +
                 COL_ARTIST_IMAGE + " TEXT," +
                 COL_ARTIST_BIO + " TEXT," +
-                COL_ARTIST_FOLLOWERS + " INTEGER DEFAULT 0)");
+                COL_ARTIST_FOLLOWERS + " INTEGER DEFAULT 0," +
+                COL_ARTIST_ACTIVE + " INTEGER DEFAULT 1)");
 
         db.execSQL("CREATE TABLE " + TABLE_GENRES + "(" +
                 COL_GENRE_ID + " TEXT PRIMARY KEY," +
@@ -229,16 +231,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // 3. TABLE ARTISTS
         db.execSQL("INSERT INTO " + TABLE_ARTISTS + " VALUES" +
-                "('a001','Taylor Swift','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FTaylor.jpg?alt=media&token=b158701f-ee29-47ad-b487-a1de6cf9627b','Ca sĩ nhạc Pop hàng đầu thế giới',152000000)," +
-                "('a002','Hoàng Dũng','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FHo%C3%A0ng%20D%C5%A9ng.jpg?alt=media&token=40970181-abc3-4623-a7d6-57ef895571af','Hoàng tử tình ca Ballad Việt Nam',820000)," +
-                "('a003','Bùi Trường Linh','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FB%C3%B9i%20Tr%C6%B0%E1%BB%9Dng%20Linh.jpg?alt=media&token=2b8ce7fa-f968-4441-8357-6ada9d0913f6','Ca sĩ kiêm nhạc sĩ tạo hit tài năng',910000)," +
-                "('a004','Vũ','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FV%C5%A9.jpg?alt=media&token=28fc6b58-6c8e-4cd5-ad40-d641a05cfa8c','Hoàng tử Indie Việt Nam',1500000)," +
-                "('a005','Sơn Tùng M-TP','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FS%C6%A1n%20T%C3%B9ng%20MTP.jpg?alt=media&token=9a163356-cee6-4299-9c18-2be0a5ff3020','Ngôi sao nhạc Pop hàng đầu Việt Nam',50000000)," +
-                "('a006','HIEUTHUHAI','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2Fartistscover_1765036795443-HieuThuHai.jpg?alt=media&token=18a6f310-d11d-4e5f-8017-1bca6a2f8b7b','Rapper điển trai, quốc dân',3200000)," +
-                "('a007','Đen Vâu','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2F%C4%90en%20V%C3%A2u.jpg?alt=media&token=3deef73a-a90e-4dce-8b4f-a64ec5aa9f21','Rapper của những bài ca triết lý',4500000)," +
-                "('a008','tlinh','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FTlinh.jpg?alt=media&token=8e79b4a1-586a-47d4-b5af-2eba4d53a305','Nữ nghệ sĩ GenZ đầy cá tính',1800000)," +
-                "('a009','Alan Walker','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FAlan%20Walker.jpg?alt=media&token=bde2aedc-4e5e-45d0-b980-d617ce426e3e','DJ/Producer nhạc điện tử thế giới',42000000)," +
-                "('a010','Grey D','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FGrey%20D.jpg?alt=media&token=997cfe71-587a-475f-a154-db5ff1f8b10a','Hoàng tử dòng nhạc mộng mơ',1100000)");
+                "('a001','Taylor Swift','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FTaylor.jpg?alt=media&token=b158701f-ee29-47ad-b487-a1de6cf9627b','Ca sĩ nhạc Pop hàng đầu thế giới',152000000,1)," +
+                "('a002','Hoàng Dũng','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FHo%C3%A0ng%20D%C5%A9ng.jpg?alt=media&token=40970181-abc3-4623-a7d6-57ef895571af','Hoàng tử tình ca Ballad Việt Nam',820000,1)," +
+                "('a003','Bùi Trường Linh','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FB%C3%B9i%20Tr%C6%B0%E1%BB%9Dng%20Linh.jpg?alt=media&token=2b8ce7fa-f968-4441-8357-6ada9d0913f6','Ca sĩ kiêm nhạc sĩ tạo hit tài năng',910000,1)," +
+                "('a004','Vũ','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FV%C5%A9.jpg?alt=media&token=28fc6b58-6c8e-4cd5-ad40-d641a05cfa8c','Hoàng tử Indie Việt Nam',1500000,1)," +
+                "('a005','Sơn Tùng M-TP','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FS%C6%A1n%20T%C3%B9ng%20MTP.jpg?alt=media&token=9a163356-cee6-4299-9c18-2be0a5ff3020','Ngôi sao nhạc Pop hàng đầu Việt Nam',50000000,1)," +
+                "('a006','HIEUTHUHAI','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2Fartistscover_1765036795443-HieuThuHai.jpg?alt=media&token=18a6f310-d11d-4e5f-8017-1bca6a2f8b7b','Rapper điển trai, quốc dân',3200000,1)," +
+                "('a007','Đen Vâu','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2F%C4%90en%20V%C3%A2u.jpg?alt=media&token=3deef73a-a90e-4dce-8b4f-a64ec5aa9f21','Rapper của những bài ca triết lý',4500000,1)," +
+                "('a008','tlinh','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FTlinh.jpg?alt=media&token=8e79b4a1-586a-47d4-b5af-2eba4d53a305','Nữ nghệ sĩ GenZ đầy cá tính',1800000,1)," +
+                "('a009','Alan Walker','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FAlan%20Walker.jpg?alt=media&token=bde2aedc-4e5e-45d0-b980-d617ce426e3e','DJ/Producer nhạc điện tử thế giới',42000000,1)," +
+                "('a010','Grey D','https://firebasestorage.googleapis.com/v0/b/waveapp-8afdf.firebasestorage.app/o/artist_avatars%2FGrey%20D.jpg?alt=media&token=997cfe71-587a-475f-a154-db5ff1f8b10a','Hoàng tử dòng nhạc mộng mơ',1100000,1)");
 
         // 4. TABLE ALBUMS
         db.execSQL("INSERT INTO " + TABLE_ALBUMS + " VALUES" +
@@ -405,6 +407,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 2) {
+            db.execSQL("ALTER TABLE " + TABLE_ARTISTS + " ADD COLUMN " +
+                    COL_ARTIST_ACTIVE + " INTEGER DEFAULT 1");
+            return;
+        }
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_FOLLOW_ARTISTS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_LIKED_ALBUMS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_LIKED_SONGS);
