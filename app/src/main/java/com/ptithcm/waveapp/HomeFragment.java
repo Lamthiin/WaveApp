@@ -487,7 +487,7 @@ public class HomeFragment extends Fragment {
             tvTitle.setText(song.getName().toUpperCase());
 
             if (song.getArtist() != null) {
-                tvDesc.setText("Boi " + song.getArtist().getName());
+                tvDesc.setText("Bởi " + song.getArtist().getName());
             }
 
             card.setCardBackgroundColor(colors[index % colors.length]);

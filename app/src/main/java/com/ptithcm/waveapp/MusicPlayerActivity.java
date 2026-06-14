@@ -188,7 +188,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
                 prepareMusicService(currentSong.getUrl());
             }
         } else {
-            Toast.makeText(this, "Khong tim thay bai hat", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Không tìm thấy bài hát", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -198,7 +198,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             Optional<Song> songOptional = songRepo.findById(id);
             if (songOptional.isEmpty()) {
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Khong tim thay bai hat", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Không tìm thấy bài hát", Toast.LENGTH_SHORT).show();
                     finish();
                 });
                 return;
@@ -263,13 +263,13 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             btnPlay.setImageResource(R.drawable.playmusic);
             seekBar.setProgress(0);
             tvCurrentTime.setText(formatDuration(0));
-            Toast.makeText(this, "Bai hat chua co duong dan phat", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Bài hát chưa có đường dẫn phát", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (!serviceBound || musicService == null) {
             Log.e(TAG, "Music service is not connected");
-            Toast.makeText(this, "Trinh phat nhac chua san sang", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Trình phát nhạc chưa sẵn sàng", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -402,7 +402,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
 
     private void playSongByDirection(int direction) {
         if (playbackQueue.isEmpty()) {
-            Toast.makeText(this, "Danh sach phat dang tai", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đang tải danh sách phát", Toast.LENGTH_SHORT).show();
             loadPlaybackQueue(songId);
             return;
         }
@@ -442,7 +442,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
                 if (currentSong != null) {
                     prepareMusicService(currentSong.getUrl());
                 } else {
-                    Toast.makeText(this, "Trinh phat nhac chua san sang", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Trình phát nhạc chưa sẵn sàng", Toast.LENGTH_SHORT).show();
                 }
                 return;
             }
@@ -523,7 +523,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         if (currentSong == null) return;
         String userId = tokenManager.getUserId();
         if (userId == null) {
-            Toast.makeText(this, "Vui long dang nhap de thich bai hat", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đăng nhập để thích bài hát", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -581,7 +581,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
 
     private void showQueueDialog() {
         if (playbackQueue.isEmpty()) {
-            Toast.makeText(this, "Danh sach phat dang tai", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đang tải danh sách phát", Toast.LENGTH_SHORT).show();
             loadPlaybackQueue(songId);
             return;
         }
@@ -590,44 +590,44 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         for (int i = 0; i < playbackQueue.size(); i++) {
             Song song = playbackQueue.get(i);
             String artistName = song.getArtist() != null ? song.getArtist().getName() : "Unknown artist";
-            String prefix = i == currentIndex ? "Dang phat: " : "";
+            String prefix = i == currentIndex ? "Đang phát: " : "";
             songTitles[i] = prefix + song.getName() + " - " + artistName;
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Queue")
+                .setTitle("Hàng đợi")
                 .setItems(songTitles, (dialog, which) -> {
                     currentIndex = which;
                     playSong(playbackQueue.get(which));
                 })
-                .setNegativeButton("Close", null)
+                .setNegativeButton("Đóng", null)
                 .show();
     }
 
     private void showSleepTimerDialog() {
-        String[] options = {"Tat hen gio", "5 phut", "15 phut", "30 phut", "60 phut"};
+        String[] options = {"Tắt hẹn giờ", "5 phút", "15 phút", "30 phút", "60 phút"};
         int[] minutes = {0, 5, 15, 30, 60};
 
         new AlertDialog.Builder(this)
                 .setTitle("Sleep timer")
                 .setItems(options, (dialog, which) -> scheduleSleepTimer(minutes[which]))
-                .setNegativeButton("Close", null)
+                .setNegativeButton("Đóng", null)
                 .show();
     }
 
     private void scheduleSleepTimer(int minutes) {
         cancelSleepTimer();
         if (minutes <= 0) {
-            Toast.makeText(this, "Da tat hen gio", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đã tắt hẹn giờ", Toast.LENGTH_SHORT).show();
             return;
         }
 
         sleepTimerRunnable = () -> {
             if (musicService != null) musicService.pausePlayback();
-            Toast.makeText(this, "Da dung phat theo hen gio", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đã dừng phát theo hẹn giờ", Toast.LENGTH_SHORT).show();
         };
         handler.postDelayed(sleepTimerRunnable, minutes * 60L * 1000L);
-        Toast.makeText(this, "Se dung sau " + minutes + " phut", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Sẽ dừng sau " + minutes + " phút", Toast.LENGTH_SHORT).show();
     }
 
     private void cancelSleepTimer() {
@@ -638,8 +638,8 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     }
 
     private void showMoreOptionsDialog() {
-        String likeText = isLiked ? "Bo thich bai hat" : "Thich bai hat";
-        String[] options = {likeText, "Phat lai tu dau", "Chia se bai hat", "Thong tin bai hat"};
+        String likeText = isLiked ? "Bỏ thích bài hát" : "Thích bài hát";
+        String[] options = {likeText, "Phát lại từ đầu", "Chia sẻ bài hát", "Thông tin bài hát"};
 
         new AlertDialog.Builder(this)
                 .setTitle("More")
@@ -691,13 +691,13 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     private void updateLyricsPreview(String lyrics) {
         String cleanLyrics = getDisplayLyrics(lyrics);
         tvLyricsPreview.setText(cleanLyrics);
-        btnLyricsDetail.setEnabled(!cleanLyrics.equals("Chua co loi bai hat"));
+        btnLyricsDetail.setEnabled(!cleanLyrics.equals("Chưa có lời bài hát"));
         btnLyricsDetail.setAlpha(btnLyricsDetail.isEnabled() ? 1f : 0.5f);
         setLyricsExpanded(false);
     }
 
     private String getDisplayLyrics(String lyrics) {
-        if (lyrics == null || lyrics.trim().isEmpty()) return "Chua co loi bai hat";
+        if (lyrics == null || lyrics.trim().isEmpty()) return "Chưa có lời bài hát";
         return lyrics.trim();
     }
 
@@ -710,7 +710,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         lyricsExpanded = expanded;
         tvLyricsPreview.setMaxLines(expanded ? Integer.MAX_VALUE : 3);
         tvLyricsPreview.setEllipsize(expanded ? null : TextUtils.TruncateAt.END);
-        btnLyricsDetail.setText(expanded ? "Thu gon" : "Xem chi tiet");
+        btnLyricsDetail.setText(expanded ? "Thu gọn" : "Xem chi tiết");
     }
 
     private String formatDuration(int seconds) {

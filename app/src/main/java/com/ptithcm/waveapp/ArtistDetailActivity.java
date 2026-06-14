@@ -122,7 +122,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
 
         artistId = getIntent().getStringExtra("ARTIST_ID");
         if (artistId == null || artistId.trim().isEmpty()) {
-            Toast.makeText(this, "Khong tim thay nghe si", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Không tìm thấy nghệ sĩ", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
@@ -134,7 +134,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
             Optional<Artist> artistOptional = artistRepo.findById(artistId);
             if (artistOptional.isEmpty()) {
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "Khong tim thay nghe si", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Không tìm thấy nghệ sĩ", Toast.LENGTH_SHORT).show();
                     finish();
                 });
                 return;
@@ -188,7 +188,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
 
         String userId = tokenManager.getUserId();
         if (userId == null) {
-            Toast.makeText(this, "Vui long dang nhap de theo doi nghe si", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đăng nhập để theo dõi nghệ sĩ", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -223,7 +223,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
 
     private void playTopSong() {
         if (songList.isEmpty()) {
-            Toast.makeText(this, "Nghe si nay chua co bai hat", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Nghệ sĩ này chưa có bài hát", Toast.LENGTH_SHORT).show();
             return;
         }
         openMusicPlayer(songList.get(0));
@@ -231,7 +231,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
 
     private void shufflePlay() {
         if (songList.isEmpty()) {
-            Toast.makeText(this, "Nghe si nay chua co bai hat", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Nghệ sĩ này chưa có bài hát", Toast.LENGTH_SHORT).show();
             return;
         }
         Song randomSong = songList.get(random.nextInt(songList.size()));
@@ -248,7 +248,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
     private void toggleLikeSong(Song song, int position) {
         String userId = tokenManager.getUserId();
         if (userId == null) {
-            Toast.makeText(this, "Vui long dang nhap de thich bai hat", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Đăng nhập để thích bài hát", Toast.LENGTH_SHORT).show();
             return;
         }
 

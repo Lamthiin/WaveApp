@@ -8,6 +8,7 @@ import com.ptithcm.waveapp.model.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public class SongRepository {
 
@@ -154,8 +155,54 @@ public class SongRepository {
                 "-1) WHERE " + DatabaseHelper.COL_SONG_ID + "=?", new String[]{id});
     }
 
+    public Song createSong(String name, String artistId, String albumId, String genreId,
+                            int duration, String url, String image, String lyrics) {
+        String id = generateSongId();
+        ContentValues cv = new ContentValues();
+        cv.put(DatabaseHelper.COL_SONG_ID, id);
+        cv.put(DatabaseHelper.COL_SONG_NAME, name);
+        cv.put(DatabaseHelper.COL_SONG_ARTIST_ID, artistId);
+        cv.put(DatabaseHelper.COL_SONG_ALBUM_ID, albumId);
+        cv.put(DatabaseHelper.COL_SONG_GENRE_ID, genreId);
+        cv.put(DatabaseHelper.COL_SONG_DURATION, duration);
+        cv.put(DatabaseHelper.COL_SONG_URL, url);
+        cv.put(DatabaseHelper.COL_SONG_IMAGE, image);
+        cv.put(DatabaseHelper.COL_SONG_LYRICS, lyrics);
+        cv.put(DatabaseHelper.COL_SONG_PLAY_COUNT, 0);
+        cv.put(DatabaseHelper.COL_SONG_LIKE_COUNT, 0);
+        db.insertWithOnConflict(DatabaseHelper.TABLE_SONGS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+        return findById(id).orElse(null);
+    }
+
+    public boolean updateSong(String id, String name, String artistId, String albumId, String genreId,
+                               int duration, String url, String image, String lyrics) {
+        ContentValues cv = new ContentValues();
+        cv.put(DatabaseHelper.COL_SONG_NAME, name);
+        cv.put(DatabaseHelper.COL_SONG_ARTIST_ID, artistId);
+        cv.put(DatabaseHelper.COL_SONG_ALBUM_ID, albumId);
+        cv.put(DatabaseHelper.COL_SONG_GENRE_ID, genreId);
+        cv.put(DatabaseHelper.COL_SONG_DURATION, duration);
+        cv.put(DatabaseHelper.COL_SONG_URL, url);
+        cv.put(DatabaseHelper.COL_SONG_IMAGE, image);
+        cv.put(DatabaseHelper.COL_SONG_LYRICS, lyrics);
+        int rows = db.update(DatabaseHelper.TABLE_SONGS, cv, DatabaseHelper.COL_SONG_ID + "=?", new String[]{id});
+        return rows > 0;
+    }
+
     public void deleteById(String id) {
-        db.delete(DatabaseHelper.TABLE_SONGS, DatabaseHelper.COL_SONG_ID + "=?", new String[]{id});
+        db.beginTransaction();
+        try {
+            db.delete(DatabaseHelper.TABLE_PLAYLIST_SONGS, DatabaseHelper.COL_PS_SONG_ID + "=?", new String[]{id});
+            db.delete(DatabaseHelper.TABLE_LIKED_SONGS, DatabaseHelper.COL_LS_SONG_ID + "=?", new String[]{id});
+            db.delete(DatabaseHelper.TABLE_SONGS, DatabaseHelper.COL_SONG_ID + "=?", new String[]{id});
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    private String generateSongId() {
+        return "song_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
     }
 
     // ── private ──────────────────────────────────────────────────

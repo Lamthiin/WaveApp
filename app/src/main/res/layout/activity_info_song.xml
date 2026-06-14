@@ -270,7 +270,7 @@
                 android:minHeight="0dp"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
-                android:text="Xem chi tiet"
+                android:text="Xem chi tiết"
                 android:textAllCaps="false"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp" />

@@ -46,8 +46,9 @@ public class AdminOverviewAdapter extends RecyclerView.Adapter<AdminOverviewAdap
     public interface OnAdminOverviewActionListener {
         void onViewDetailClick(AdminOverviewItem item);
         void onEditClick(AdminOverviewItem item);
-        void onHideClick(AdminOverviewItem item);
-        void onRestoreClick(AdminOverviewItem item);
+        default void onHideClick(AdminOverviewItem item) {}
+        default void onRestoreClick(AdminOverviewItem item) {}
+        default void onDeleteClick(AdminOverviewItem item) {}
     }
 
     public interface OnAdminOverviewItemClickListener {
@@ -57,6 +58,11 @@ public class AdminOverviewAdapter extends RecyclerView.Adapter<AdminOverviewAdap
     private final List<AdminOverviewItem> items = new ArrayList<>();
     private OnAdminOverviewActionListener actionListener;
     private OnAdminOverviewItemClickListener itemClickListener;
+    private int actionMenuResId = R.menu.admin_item_actions_menu;
+
+    public void setActionMenuResId(int actionMenuResId) {
+        this.actionMenuResId = actionMenuResId;
+    }
 
     public void setItems(List<AdminOverviewItem> newItems) {
         items.clear();
@@ -112,7 +118,7 @@ public class AdminOverviewAdapter extends RecyclerView.Adapter<AdminOverviewAdap
 
             PopupMenu popupMenu = new PopupMenu(holder.itemView.getContext(), holder.btnMore);
             MenuInflater inflater = popupMenu.getMenuInflater();
-            inflater.inflate(R.menu.admin_item_actions_menu, popupMenu.getMenu());
+            inflater.inflate(actionMenuResId, popupMenu.getMenu());
             MenuItem hideItem = popupMenu.getMenu().findItem(R.id.action_hide);
             MenuItem restoreItem = popupMenu.getMenu().findItem(R.id.action_restore);
             if (hideItem != null) {
@@ -137,6 +143,10 @@ public class AdminOverviewAdapter extends RecyclerView.Adapter<AdminOverviewAdap
                 }
                 if (itemId == R.id.action_restore) {
                     actionListener.onRestoreClick(item);
+                    return true;
+                }
+                if (itemId == R.id.action_delete) {
+                    actionListener.onDeleteClick(item);
                     return true;
                 }
                 return false;

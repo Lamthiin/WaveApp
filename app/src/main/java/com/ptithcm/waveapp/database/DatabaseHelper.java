@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME    = "wave_app.db";
-    private static final int    DATABASE_VERSION = 2;
+    private static final int    DATABASE_VERSION = 3;
 
     private static DatabaseHelper instance;
     public static synchronized DatabaseHelper getInstance(Context ctx) {
@@ -217,9 +217,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("INSERT INTO " + TABLE_USERS + " VALUES" +
                 "('u001','dev','dev@wave.com','$2a$12$dAHDlXmMPT9SXbITlkNEM.XT4bgIRhCJ804p6SR3f90otTwV/9AIm','Dev',NULL,'ADMIN',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
                 "('u002','admin','admin@wave.com','$2a$12$m1d70IyAOOA4VlZ.MaHFJu6ZTQu5Izbu.xntueTChqGRYgFMO/qB6','Admin',NULL,'ADMIN',1,'2026-05-01T00:00:00.0','2026-05-01T00:00:20.0')," +
-                "('u003','usera','a@gmail.com','$2a$12$nLuSR.Pt3bVcMA7lQaYjp.a.V4yVl2erT94VQrvgB3HD6Zrv2ACPi','Nguyễn Văn A',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
-                "('u004','userb','b@gmail.com','$2a$12$dCqy19P0rBt38Xeh3V9QjuraojEyBOZzjLYOIZL1PBlnkMll9zq0C','Trần Văn B',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
-                "('u005','userc','c@gmail.com','$2a$12$vt9ePR5lkL4qgDmKZXOhauBcbIB5NZU.h5wy6/7g2oYLeOvct7Syq','Lê Thị C',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')");
+                "('u003','usera','a@gmail.com','$2a$12$Pp/lKLhmqMgYWWxfpvpRReztpj4aUCEN2KnTLUOzr3IJKXopTv5hG','Nguyễn Văn A',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u004','userb','b@gmail.com','$2a$12$43vYkiVmDCJ0lDEVCbQHzujGG2RXcem7jb5wyvOoB4E3fDcyImaG2','Trần Văn B',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u005','userc','c@gmail.com','$2a$12$5jki0VST/gEnozz/REEPJuFSsBkdiEAa/kvHtn/SlChxTG1CeeauC','Lê Thị C',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')");
 
         // 2. TABLE GENRES
         db.execSQL("INSERT INTO " + TABLE_GENRES + " VALUES" +

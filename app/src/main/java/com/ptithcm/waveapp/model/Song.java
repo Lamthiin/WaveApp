@@ -17,7 +17,6 @@ public class Song implements Serializable {
     private String lyrics;
     @Builder.Default private long playCount = 0;
     @Builder.Default private long likeCount = 0;
-    @Builder.Default private boolean active = true;
     private LocalDateTime createdAt;
 
     public String getId() {
@@ -106,14 +105,6 @@ public class Song implements Serializable {
 
     public void setLikeCount(long likeCount) {
         this.likeCount = likeCount;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
     }
 
     public LocalDateTime getCreatedAt() {
