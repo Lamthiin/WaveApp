@@ -1,7 +1,6 @@
 package com.ptithcm.waveapp;
 
 import android.content.DialogInterface;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -125,14 +124,14 @@ public class AdminUserManagementActivity extends BaseAdminActivity {
 
     // Đổi màu sắc giao diện (xanh lá cho nút đang chọn, xám cho nút không chọn)
     private void updateFilterUI(TextView active, TextView inactive1, TextView inactive2) {
-        active.setBackgroundColor(Color.parseColor("#1DB954"));
-        active.setTextColor(Color.parseColor("#FFFFFF"));
+        active.setBackgroundResource(R.drawable.bg_admin_tab_active);
+        active.setTextColor(getColor(android.R.color.white));
 
-        inactive1.setBackgroundColor(Color.parseColor("#282828"));
-        inactive1.setTextColor(Color.parseColor("#B3B3B3"));
+        inactive1.setBackgroundResource(R.drawable.bg_admin_tab_inactive);
+        inactive1.setTextColor(0xFFB3B3B3);
 
-        inactive2.setBackgroundColor(Color.parseColor("#282828"));
-        inactive2.setTextColor(Color.parseColor("#B3B3B3"));
+        inactive2.setBackgroundResource(R.drawable.bg_admin_tab_inactive);
+        inactive2.setTextColor(0xFFB3B3B3);
     }
 
     // Lấy dữ liệu thật từ Database

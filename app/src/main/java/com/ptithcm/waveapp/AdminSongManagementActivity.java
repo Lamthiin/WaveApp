@@ -82,6 +82,7 @@ public class AdminSongManagementActivity extends BaseAdminActivity {
                     meta,
                     song.getImage(),
                     R.drawable.ic_logo,
+                    false,
                     false
             ));
         }

@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.text.TextUtils;
 import android.widget.ImageView;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
@@ -30,8 +31,9 @@ public class AdminOverviewAdapter extends RecyclerView.Adapter<AdminOverviewAdap
         public final String imageUrl;
         public final int placeholderResId;
         public final boolean hidden;
+        public final boolean singleLineMeta;
 
-        public AdminOverviewItem(String id, String indexLabel, String title, String subtitle, String meta, String imageUrl, int placeholderResId, boolean hidden) {
+        public AdminOverviewItem(String id, String indexLabel, String title, String subtitle, String meta, String imageUrl, int placeholderResId, boolean hidden, boolean singleLineMeta) {
             this.id = id;
             this.indexLabel = indexLabel;
             this.title = title;
@@ -40,6 +42,7 @@ public class AdminOverviewAdapter extends RecyclerView.Adapter<AdminOverviewAdap
             this.imageUrl = imageUrl;
             this.placeholderResId = placeholderResId;
             this.hidden = hidden;
+            this.singleLineMeta = singleLineMeta;
         }
     }
 
@@ -98,6 +101,8 @@ public class AdminOverviewAdapter extends RecyclerView.Adapter<AdminOverviewAdap
         holder.tvTitle.setText(item.title);
         holder.tvSubtitle.setText(item.subtitle);
         holder.tvMeta.setText(item.meta);
+        holder.tvMeta.setMaxLines(item.singleLineMeta ? 1 : Integer.MAX_VALUE);
+        holder.tvMeta.setEllipsize(item.singleLineMeta ? TextUtils.TruncateAt.END : null);
         ImageFileHelper.loadIntoImageView(holder.itemView.getContext(), item.imageUrl, holder.ivImage, item.placeholderResId);
         holder.ivImage.setOnClickListener(v -> {
             if (itemClickListener != null) {

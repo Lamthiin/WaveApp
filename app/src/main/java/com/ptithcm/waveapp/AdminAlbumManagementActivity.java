@@ -30,7 +30,8 @@ public class AdminAlbumManagementActivity extends BaseAdminActivity {
         setupAdminChrome(R.id.tvHeaderTitle, R.id.tvAdminAvatar, R.id.bottomAdminNavigation,
                 R.id.nav_admin_albums, "Quản lý album");
 
-        ((TextView) findViewById(R.id.tvSectionHint)).setText("Danh sách album hiện có trong hệ thống.");
+        findViewById(R.id.hsvStatusFilter).setVisibility(TextView.GONE);
+        findViewById(R.id.tvSectionHint).setVisibility(TextView.GONE);
 
         RecyclerView recyclerView = findViewById(R.id.rvAdminList);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -81,6 +82,7 @@ public class AdminAlbumManagementActivity extends BaseAdminActivity {
                     meta,
                     album.getImage(),
                     R.drawable.ic_logo,
+                    false,
                     false
             ));
         }
