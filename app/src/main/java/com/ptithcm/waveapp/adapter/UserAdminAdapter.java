@@ -1,12 +1,10 @@
-package com.ptithcm.waveapp.adapter;
+package com.ptithcm.waveapp.adapter; // Đổi lại package name cho đúng với thư mục của bạn
 
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -22,6 +20,7 @@ public class UserAdminAdapter extends RecyclerView.Adapter<UserAdminAdapter.User
     private List<User> userList = new ArrayList<>();
     private final OnUserActionListener listener;
 
+    // Interface để bắt sự kiện Sửa/Xóa truyền ngược lại Activity
     public interface OnUserActionListener {
         void onEditClick(User user);
         void onDeleteClick(User user);
@@ -52,27 +51,16 @@ public class UserAdminAdapter extends RecyclerView.Adapter<UserAdminAdapter.User
         holder.tvName.setText(user.getName());
         holder.tvEmail.setText(user.getEmail());
 
+        // Hiển thị Username và Role
         String usernameRole = "@" + user.getUsername() + " • " + user.getRole();
         holder.tvUsernameRole.setText(usernameRole);
 
-        holder.btnMoreUser.setOnClickListener(v -> {
-            PopupMenu popupMenu = new PopupMenu(holder.itemView.getContext(), holder.btnMoreUser);
-            MenuInflater inflater = popupMenu.getMenuInflater();
-            inflater.inflate(R.menu.user_item_actions_menu, popupMenu.getMenu());
-            popupMenu.setOnMenuItemClickListener(menuItem -> {
-                int itemId = menuItem.getItemId();
-                if (itemId == R.id.action_edit_user) {
-                    listener.onEditClick(user);
-                    return true;
-                }
-                if (itemId == R.id.action_delete_user) {
-                    listener.onDeleteClick(user);
-                    return true;
-                }
-                return false;
-            });
-            popupMenu.show();
-        });
+        // TODO: Load avatar bằng Glide hoặc thư viện hình ảnh của bạn
+        // Glide.with(holder.itemView.getContext()).load(user.getAvatar()).into(holder.ivAvatar);
+
+        // Bắt sự kiện bấm nút
+        holder.btnEditUser.setOnClickListener(v -> listener.onEditClick(user));
+        holder.btnDeleteUser.setOnClickListener(v -> listener.onDeleteClick(user));
     }
 
     @Override
@@ -83,7 +71,7 @@ public class UserAdminAdapter extends RecyclerView.Adapter<UserAdminAdapter.User
     static class UserViewHolder extends RecyclerView.ViewHolder {
         ImageView ivAvatar;
         TextView tvName, tvUsernameRole, tvEmail;
-        ImageButton btnMoreUser;
+        ImageButton btnEditUser, btnDeleteUser;
 
         public UserViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -91,7 +79,8 @@ public class UserAdminAdapter extends RecyclerView.Adapter<UserAdminAdapter.User
             tvName = itemView.findViewById(R.id.tvName);
             tvUsernameRole = itemView.findViewById(R.id.tvUsernameRole);
             tvEmail = itemView.findViewById(R.id.tvEmail);
-            btnMoreUser = itemView.findViewById(R.id.btnMoreUser);
+            btnEditUser = itemView.findViewById(R.id.btnEditUser);
+            btnDeleteUser = itemView.findViewById(R.id.btnDeleteUser);
         }
     }
 }

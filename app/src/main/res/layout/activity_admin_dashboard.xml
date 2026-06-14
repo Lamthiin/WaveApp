@@ -149,7 +149,7 @@
                         android:layout_marginTop="8dp"
                         android:maxLines="2"
                         android:minLines="2"
-                        android:text="Tài khoản đang lưu"
+                        android:text="Tài khoản đang lưu trong hệ thống"
                         android:textColor="#8A8A8A"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -431,7 +431,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Top 5 nghệ sĩ được theo dõi nhiều nhất"
+                    android:text="Nghệ sĩ follower cao"
                     android:textColor="#FFFFFF"
                     android:textSize="16sp"
                     android:textStyle="bold" />
