@@ -2,8 +2,13 @@ package com.ptithcm.waveapp.database;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+
+import com.ptithcm.waveapp.model.Artist;
+
+import java.util.Locale;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -465,5 +470,58 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_SONG_URL, songUrl);
         values.put(COL_SONG_IMAGE, imageUrl);
         db.update(TABLE_SONGS, values, COL_SONG_ID + "=?", new String[]{id});
+    }
+
+    public Artist insertArtistDirect(String name, String image, String bio) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String artistId = generateNextArtistId(db);
+
+        ContentValues values = new ContentValues();
+        values.put(COL_ARTIST_ID, artistId);
+        values.put(COL_ARTIST_NAME, name);
+        values.put(COL_ARTIST_IMAGE, image);
+        values.put(COL_ARTIST_BIO, bio);
+        values.put(COL_ARTIST_FOLLOWERS, 0);
+        values.put(COL_ARTIST_ACTIVE, 1);
+
+        long rowId = db.insertWithOnConflict(TABLE_ARTISTS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        if (rowId == -1) {
+            return null;
+        }
+
+        return Artist.builder()
+                .id(artistId)
+                .name(name)
+                .image(image)
+                .bio(bio)
+                .followersCount(0)
+                .active(true)
+                .build();
+    }
+
+    private String generateNextArtistId(SQLiteDatabase db) {
+        Cursor c = db.rawQuery(
+                "SELECT " + COL_ARTIST_ID +
+                        " FROM " + TABLE_ARTISTS +
+                        " WHERE " + COL_ARTIST_ID + " GLOB 'a[0-9]*'" +
+                        " ORDER BY CAST(SUBSTR(" + COL_ARTIST_ID + ", 2) AS INTEGER) DESC LIMIT 1",
+                null
+        );
+        try {
+            int nextNumber = 1;
+            if (c != null && c.moveToFirst()) {
+                String lastId = c.getString(0);
+                if (lastId != null && lastId.length() > 1) {
+                    nextNumber = Integer.parseInt(lastId.substring(1)) + 1;
+                }
+            }
+            return String.format(Locale.US, "a%03d", nextNumber);
+        } catch (NumberFormatException e) {
+            return "a001";
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+        }
     }
 }

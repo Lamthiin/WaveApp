@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_admin_dialog"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView
+        android:id="@+id/tvProfileAvatar"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_admin_avatar"
+        android:gravity="center"
+        android:text="D"
+        android:textColor="#121212"
+        android:textSize="22sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvProfileName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Dev"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvProfileEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="dev@wave.com"
+        android:textColor="#B3B3B3"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/tvProfileRole"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_admin_role_badge"
+        android:paddingStart="12dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="6dp"
+        android:text="ADMIN"
+        android:textColor="#1DB954"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="22dp"
+        android:gravity="end"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCloseProfileDialog"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:minWidth="0dp"
+            android:text="Đóng"
+            android:textAllCaps="false"
+            android:textColor="#B3B3B3"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="22dp"
+            app:strokeColor="#383838"
+            app:strokeWidth="1dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLogoutProfileDialog"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:layout_marginStart="12dp"
+            android:minWidth="0dp"
+            android:text="Đăng xuất"
+            android:textAllCaps="false"
+            android:textColor="#121212"
+            app:backgroundTint="#1DB954"
+            app:cornerRadius="22dp" />
+    </LinearLayout>
+
+</LinearLayout>

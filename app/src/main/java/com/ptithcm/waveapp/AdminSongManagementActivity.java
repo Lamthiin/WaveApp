@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -81,7 +82,7 @@ public class AdminSongManagementActivity extends BaseAdminActivity {
                 R.id.nav_admin_songs, "Quản lý bài hát");
 
         findViewById(R.id.hsvStatusFilter).setVisibility(View.GONE);
-        ((TextView) findViewById(R.id.tvSectionHint)).setText("Thêm, sửa hoặc xóa bài hát trong hệ thống.");
+        findViewById(R.id.tvSectionHint).setVisibility(View.GONE);
 
         songRepository = new SongRepository(DatabaseHelper.getInstance(this));
         artistRepository = new ArtistRepository(DatabaseHelper.getInstance(this));
@@ -136,13 +137,20 @@ public class AdminSongManagementActivity extends BaseAdminActivity {
         recyclerView.setAdapter(adapter);
 
         searchInput = findViewById(R.id.etSearchAdmin);
+        ImageButton clearSearchButton = findViewById(R.id.btnClearSearchAdmin);
         searchInput.setHint("Tìm bài hát theo tên...");
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                clearSearchButton.setVisibility(s != null && s.length() > 0 ? View.VISIBLE : View.GONE);
                 filterSongs(s.toString());
             }
             @Override public void afterTextChanged(Editable s) {}
+        });
+        clearSearchButton.setOnClickListener(v -> {
+            searchInput.setText("");
+            searchInput.clearFocus();
+            clearSearchButton.setVisibility(View.GONE);
         });
 
         com.google.android.material.floatingactionbutton.FloatingActionButton fabAdd = findViewById(R.id.fabAdminAdd);
@@ -188,6 +196,7 @@ public class AdminSongManagementActivity extends BaseAdminActivity {
                     song.getImage(),
                     R.drawable.ic_music_note,
                     false,
+                    true,
                     false
             ));
             displayIndex++;
@@ -282,7 +291,6 @@ public class AdminSongManagementActivity extends BaseAdminActivity {
         btnChooseSongAudio.setOnClickListener(v -> songAudioPickerLauncher.launch("audio/*"));
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(song == null ? "Thêm bài hát" : "Chỉnh sửa bài hát")
                 .setView(dialogView)
                 .create();
 

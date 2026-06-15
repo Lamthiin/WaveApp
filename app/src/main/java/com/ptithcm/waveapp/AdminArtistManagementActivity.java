@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -46,6 +47,7 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
     private final List<Artist> hiddenArtists = new ArrayList<>();
     private final List<AdminOverviewAdapter.AdminOverviewItem> filteredArtistItems = new ArrayList<>();
     private AdminOverviewAdapter adapter;
+    private DatabaseHelper dbHelper;
     private ArtistRepository artistRepository;
     private EditText searchInput;
     private TextView filterActive;
@@ -69,7 +71,8 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
                 R.id.nav_admin_artists, "Quản lý nghệ sĩ");
 
         findViewById(R.id.tvSectionHint).setVisibility(View.GONE);
-        artistRepository = new ArtistRepository(DatabaseHelper.getInstance(this));
+        dbHelper = DatabaseHelper.getInstance(this);
+        artistRepository = new ArtistRepository(dbHelper);
         artistImagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
@@ -138,15 +141,22 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
         });
 
         searchInput = findViewById(R.id.etSearchAdmin);
+        ImageButton clearSearchButton = findViewById(R.id.btnClearSearchAdmin);
         filterActive = findViewById(R.id.filterActive);
         filterHidden = findViewById(R.id.filterHidden);
         searchInput.setHint("Tìm nghệ sĩ theo tên...");
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                clearSearchButton.setVisibility(s != null && s.length() > 0 ? View.VISIBLE : View.GONE);
                 filterArtists(s.toString());
             }
             @Override public void afterTextChanged(Editable s) {}
+        });
+        clearSearchButton.setOnClickListener(v -> {
+            searchInput.setText("");
+            searchInput.clearFocus();
+            clearSearchButton.setVisibility(View.GONE);
         });
         setupTabs();
 
@@ -226,6 +236,7 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
                     artist.getImage(),
                     R.drawable.ic_logo,
                     TAB_HIDDEN.equals(currentArtistTab),
+                    false,
                     true
             ));
             displayIndex++;
@@ -294,7 +305,6 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
         dialogChooseArtistImageButton.setOnClickListener(v -> artistImagePickerLauncher.launch("image/*"));
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(artist == null ? "Thêm nghệ sĩ" : "Chỉnh sửa nghệ sĩ")
                 .setView(dialogView)
                 .create();
 
@@ -392,10 +402,16 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
     private void persistArtist(Artist artist, String name, String bio, String imageUrl, AlertDialog dialog,
                                MaterialButton btnSave, MaterialButton btnCancel) {
         if (artist == null) {
-            artistRepository.createArtist(name, imageUrl, bio);
-            currentArtistTab = TAB_ACTIVE;
-            updateTabUI();
-            Toast.makeText(this, "Đã thêm nghệ sĩ mới", Toast.LENGTH_SHORT).show();
+            Artist createdArtist = dbHelper.insertArtistDirect(name, imageUrl, bio);
+            if (createdArtist != null) {
+                currentArtistTab = TAB_ACTIVE;
+                updateTabUI();
+                Toast.makeText(this, "Đã thêm nghệ sĩ mới", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Thêm nghệ sĩ thất bại", Toast.LENGTH_SHORT).show();
+                restoreArtistDialogActions(btnSave, btnCancel, "Thêm");
+                return;
+            }
         } else {
             boolean updated = artistRepository.updateArtist(artist.getId(), name, imageUrl, bio);
             Toast.makeText(this, updated ? "Đã cập nhật nghệ sĩ" : "Cập nhật thất bại", Toast.LENGTH_SHORT).show();

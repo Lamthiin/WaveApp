@@ -6,8 +6,10 @@ import android.database.sqlite.SQLiteDatabase;
 import com.ptithcm.waveapp.database.DatabaseHelper;
 import com.ptithcm.waveapp.model.Album;
 import com.ptithcm.waveapp.model.Artist;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 // FIX 1: xóa "implements AlbumRepository" – không tự implements chính mình
@@ -50,6 +52,44 @@ public class AlbumRepository {
         return list.isEmpty() ? Optional.empty() : Optional.of(list.get(0));
     }
 
+    public Album createAlbum(String name, String artistId, String image, LocalDate releaseDate, List<String> songIds) {
+        String id = generateAlbumId();
+        db.beginTransaction();
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put(DatabaseHelper.COL_ALBUM_ID, id);
+            cv.put(DatabaseHelper.COL_ALBUM_NAME, name);
+            cv.put(DatabaseHelper.COL_ALBUM_ARTIST_ID, artistId);
+            cv.put(DatabaseHelper.COL_ALBUM_IMAGE, image);
+            cv.put(DatabaseHelper.COL_ALBUM_RELEASE_DATE, releaseDate != null ? releaseDate.toString() : null);
+            cv.put(DatabaseHelper.COL_ALBUM_PLAY_COUNT, 0);
+            db.insertWithOnConflict(DatabaseHelper.TABLE_ALBUMS, null, cv, SQLiteDatabase.CONFLICT_REPLACE);
+            assignSongsToAlbum(id, songIds);
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+        return findById(id).orElse(null);
+    }
+
+    public boolean updateAlbum(String id, String name, String artistId, String image, LocalDate releaseDate, List<String> songIds) {
+        db.beginTransaction();
+        try {
+            ContentValues cv = new ContentValues();
+            cv.put(DatabaseHelper.COL_ALBUM_NAME, name);
+            cv.put(DatabaseHelper.COL_ALBUM_ARTIST_ID, artistId);
+            cv.put(DatabaseHelper.COL_ALBUM_IMAGE, image);
+            cv.put(DatabaseHelper.COL_ALBUM_RELEASE_DATE, releaseDate != null ? releaseDate.toString() : null);
+            int rows = db.update(DatabaseHelper.TABLE_ALBUMS, cv, DatabaseHelper.COL_ALBUM_ID + "=?", new String[]{id});
+            clearSongsFromAlbum(id);
+            assignSongsToAlbum(id, songIds);
+            db.setTransactionSuccessful();
+            return rows > 0;
+        } finally {
+            db.endTransaction();
+        }
+    }
+
     public void save(Album album) {
         ContentValues cv = new ContentValues();
         cv.put(DatabaseHelper.COL_ALBUM_ID, album.getId());
@@ -62,10 +102,61 @@ public class AlbumRepository {
     }
 
     public void deleteById(String id) {
-        db.delete(DatabaseHelper.TABLE_ALBUMS, DatabaseHelper.COL_ALBUM_ID + "=?", new String[]{id});
+        db.beginTransaction();
+        try {
+            clearSongsFromAlbum(id);
+            db.delete(DatabaseHelper.TABLE_LIKED_ALBUMS, DatabaseHelper.COL_LA_ALBUM_ID + "=?", new String[]{id});
+            db.delete(DatabaseHelper.TABLE_ALBUMS, DatabaseHelper.COL_ALBUM_ID + "=?", new String[]{id});
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
     }
 
     private List<Album> findAll() { return query("", null, null); }
+
+    private void clearSongsFromAlbum(String albumId) {
+        ContentValues values = new ContentValues();
+        values.putNull(DatabaseHelper.COL_SONG_ALBUM_ID);
+        db.update(DatabaseHelper.TABLE_SONGS, values, DatabaseHelper.COL_SONG_ALBUM_ID + "=?", new String[]{albumId});
+    }
+
+    private void assignSongsToAlbum(String albumId, List<String> songIds) {
+        if (songIds == null) {
+            return;
+        }
+        ContentValues values = new ContentValues();
+        values.put(DatabaseHelper.COL_SONG_ALBUM_ID, albumId);
+        for (String songId : songIds) {
+            db.update(DatabaseHelper.TABLE_SONGS, values, DatabaseHelper.COL_SONG_ID + "=?", new String[]{songId});
+        }
+    }
+
+    private String generateAlbumId() {
+        Cursor c = db.rawQuery(
+                "SELECT " + DatabaseHelper.COL_ALBUM_ID +
+                        " FROM " + DatabaseHelper.TABLE_ALBUMS +
+                        " WHERE " + DatabaseHelper.COL_ALBUM_ID + " GLOB 'al[0-9]*'" +
+                        " ORDER BY CAST(SUBSTR(" + DatabaseHelper.COL_ALBUM_ID + ", 3) AS INTEGER) DESC LIMIT 1",
+                null
+        );
+        try {
+            int nextNumber = 1;
+            if (c != null && c.moveToFirst()) {
+                String lastId = c.getString(0);
+                if (lastId != null && lastId.length() > 2) {
+                    nextNumber = Integer.parseInt(lastId.substring(2)) + 1;
+                }
+            }
+            return String.format(Locale.US, "al%03d", nextNumber);
+        } catch (NumberFormatException e) {
+            return "al001";
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+        }
+    }
 
     private List<Album> query(String where, String[] args, String extra) {
         // FIX 5: JOIN 1 lần thay vì N+1 query

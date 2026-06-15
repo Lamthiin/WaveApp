@@ -83,6 +83,9 @@
             android:name=".AdminAlbumManagementActivity"
             android:exported="false" />
         <activity
+            android:name=".AdminAlbumDetailActivity"
+            android:exported="false" />
+        <activity
             android:name=".AdminArtistDetailActivity"
             android:exported="false" />
 

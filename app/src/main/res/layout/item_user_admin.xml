@@ -6,17 +6,32 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    android:background="#181818"
+    android:background="@drawable/bg_admin_overview_item"
     android:padding="12dp">
 
-    <ImageView
+    <TextView
+        android:id="@+id/tvUserIndex"
+        android:layout_width="24dp"
+        android:layout_height="60dp"
+        android:gravity="center"
+        android:textColor="#B3B3B3"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/ivAvatar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/ivAvatar"
+        tools:text="1." />
+
+    <com.google.android.material.imageview.ShapeableImageView
         android:id="@+id/ivAvatar"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:scaleType="centerCrop"
         android:src="@android:drawable/sym_def_app_icon"
+        app:shapeAppearanceOverlay="@style/CircleImage"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginStart="8dp"
+        app:layout_constraintStart_toEndOf="@id/tvUserIndex"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView

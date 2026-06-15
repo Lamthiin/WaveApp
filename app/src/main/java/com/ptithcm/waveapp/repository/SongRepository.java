@@ -189,6 +189,18 @@ public class SongRepository {
         return rows > 0;
     }
 
+    public boolean removeSongFromAlbum(String songId, String albumId) {
+        ContentValues cv = new ContentValues();
+        cv.putNull(DatabaseHelper.COL_SONG_ALBUM_ID);
+        int rows = db.update(
+                DatabaseHelper.TABLE_SONGS,
+                cv,
+                DatabaseHelper.COL_SONG_ID + "=? AND " + DatabaseHelper.COL_SONG_ALBUM_ID + "=?",
+                new String[]{songId, albumId}
+        );
+        return rows > 0;
+    }
+
     public void deleteById(String id) {
         db.beginTransaction();
         try {

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.ptithcm.waveapp.R;
 import com.ptithcm.waveapp.model.User;
+import com.ptithcm.waveapp.util.ImageFileHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,9 +49,16 @@ public class UserAdminAdapter extends RecyclerView.Adapter<UserAdminAdapter.User
     @Override
     public void onBindViewHolder(@NonNull UserViewHolder holder, int position) {
         User user = userList.get(position);
+        holder.tvUserIndex.setText((position + 1) + ".");
 
         holder.tvName.setText(user.getName());
         holder.tvEmail.setText(user.getEmail());
+        ImageFileHelper.loadIntoImageView(
+                holder.itemView.getContext(),
+                user.getAvatar(),
+                holder.ivAvatar,
+                R.drawable.avatar_default
+        );
 
         String usernameRole = "@" + user.getUsername() + " • " + user.getRole();
         holder.tvUsernameRole.setText(usernameRole);
@@ -82,11 +90,12 @@ public class UserAdminAdapter extends RecyclerView.Adapter<UserAdminAdapter.User
 
     static class UserViewHolder extends RecyclerView.ViewHolder {
         ImageView ivAvatar;
-        TextView tvName, tvUsernameRole, tvEmail;
+        TextView tvUserIndex, tvName, tvUsernameRole, tvEmail;
         ImageButton btnMoreUser;
 
         public UserViewHolder(@NonNull View itemView) {
             super(itemView);
+            tvUserIndex = itemView.findViewById(R.id.tvUserIndex);
             ivAvatar = itemView.findViewById(R.id.ivAvatar);
             tvName = itemView.findViewById(R.id.tvName);
             tvUsernameRole = itemView.findViewById(R.id.tvUsernameRole);

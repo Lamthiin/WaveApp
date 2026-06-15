@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="12dp"
-    android:background="#181818"
+    android:background="@drawable/bg_admin_overview_item"
     android:padding="12dp">
 
     <TextView
@@ -42,9 +42,11 @@
         android:textColor="#FFFFFF"
         android:textSize="17sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/tvAdminItemSubtitle"
         app:layout_constraintEnd_toStartOf="@id/layoutAdminItemActions"
         app:layout_constraintStart_toEndOf="@id/ivAdminItemImage"
         app:layout_constraintTop_toTopOf="@id/ivAdminItemImage"
+        app:layout_constraintVertical_chainStyle="packed"
         tools:text="Tên mục" />
 
     <TextView
@@ -55,6 +57,7 @@
         android:textColor="#1DB954"
         android:textSize="13sp"
         android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@id/tvAdminItemMeta"
         app:layout_constraintEnd_toStartOf="@id/layoutAdminItemActions"
         app:layout_constraintStart_toStartOf="@id/tvAdminItemTitle"
         app:layout_constraintTop_toBottomOf="@id/tvAdminItemTitle"
@@ -67,6 +70,7 @@
         android:layout_marginTop="4dp"
         android:textColor="#B3B3B3"
         android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@id/ivAdminItemImage"
         app:layout_constraintEnd_toStartOf="@id/layoutAdminItemActions"
         app:layout_constraintStart_toStartOf="@id/tvAdminItemTitle"
         app:layout_constraintTop_toBottomOf="@id/tvAdminItemSubtitle"

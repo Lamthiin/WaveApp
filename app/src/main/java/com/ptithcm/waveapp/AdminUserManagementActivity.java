@@ -1,16 +1,20 @@
 package com.ptithcm.waveapp;
 
-import android.content.DialogInterface;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.android.material.button.MaterialButton;
 import com.ptithcm.waveapp.adapter.UserAdminAdapter;
 import com.ptithcm.waveapp.database.DatabaseHelper;
 import com.ptithcm.waveapp.model.User;
@@ -22,6 +26,7 @@ import java.util.List;
 public class AdminUserManagementActivity extends BaseAdminActivity {
 
     private EditText etSearchUser;
+    private ImageButton btnClearSearchUser;
     private TextView filterAll, filterAdmin, filterUser;
     private TextView tvAdminAvatar;
     private RecyclerView rvUsers;
@@ -62,6 +67,7 @@ public class AdminUserManagementActivity extends BaseAdminActivity {
 
     private void initViews() {
         etSearchUser = findViewById(R.id.etSearchUser);
+        btnClearSearchUser = findViewById(R.id.btnClearSearchAdmin);
         filterAll = findViewById(R.id.filterAll);
         filterAdmin = findViewById(R.id.filterAdmin);
         filterUser = findViewById(R.id.filterUser);
@@ -114,6 +120,9 @@ public class AdminUserManagementActivity extends BaseAdminActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (btnClearSearchUser != null) {
+                    btnClearSearchUser.setVisibility(s != null && s.length() > 0 ? android.view.View.VISIBLE : android.view.View.GONE);
+                }
                 // Khi gõ chữ, áp dụng ngay tìm kiếm và lọc
                 applySearchAndFilter(s.toString());
             }
@@ -121,6 +130,25 @@ public class AdminUserManagementActivity extends BaseAdminActivity {
             @Override
             public void afterTextChanged(Editable s) {}
         });
+
+        if (btnClearSearchUser != null) {
+            btnClearSearchUser.setOnClickListener(v -> {
+                etSearchUser.setText("");
+                etSearchUser.clearFocus();
+                btnClearSearchUser.setVisibility(android.view.View.GONE);
+            });
+        }
+    }
+
+    @Override
+    protected void clearAdminSearchIfPresent() {
+        if (etSearchUser != null) {
+            etSearchUser.setText("");
+            etSearchUser.clearFocus();
+        }
+        if (btnClearSearchUser != null) {
+            btnClearSearchUser.setVisibility(android.view.View.GONE);
+        }
     }
 
     // Đổi màu sắc giao diện (xanh lá cho nút đang chọn, xám cho nút không chọn)
@@ -171,28 +199,44 @@ public class AdminUserManagementActivity extends BaseAdminActivity {
     // --- CÁC HÀM XỬ LÝ DIALOG SỬA / XÓA ---
 
     private void showEditRoleDialog(User user) {
-        String[] roles = {"USER", "ADMIN"};
-        // Xác định vị trí mặc định đang được chọn
-        int checkedItem = (user.getRole() != null && user.getRole().equalsIgnoreCase("ADMIN")) ? 1 : 0;
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_admin_user_role, null, false);
+        TextView tvTitle = dialogView.findViewById(R.id.tvUserRoleDialogTitle);
+        TextView tvSubtitle = dialogView.findViewById(R.id.tvUserRoleDialogSubtitle);
+        RadioGroup radioGroup = dialogView.findViewById(R.id.radioGroupUserRole);
+        MaterialButton btnCancel = dialogView.findViewById(R.id.btnCancelUserRoleDialog);
+        MaterialButton btnSave = dialogView.findViewById(R.id.btnSaveUserRoleDialog);
 
-        new AlertDialog.Builder(this)
-                .setTitle("Cập nhật quyền cho " + user.getName())
-                .setSingleChoiceItems(roles, checkedItem, (dialog, which) -> {
-                    String newRole = roles[which];
+        tvTitle.setText("Cập nhật quyền");
+        tvSubtitle.setText("Chọn quyền cho " + user.getName());
 
-                    // Gọi hàm cập nhật từ UserRepository
-                    boolean isUpdated = userRepository.updateUserRole(user.getId(), newRole);
+        if (user.getRole() != null && user.getRole().equalsIgnoreCase("ADMIN")) {
+            radioGroup.check(R.id.radioUserRoleAdmin);
+        } else {
+            radioGroup.check(R.id.radioUserRoleUser);
+        }
 
-                    if (isUpdated) {
-                        Toast.makeText(this, "Đã cập nhật quyền thành " + newRole, Toast.LENGTH_SHORT).show();
-                        loadDataFromDatabase(); // Load lại danh sách ngay lập tức
-                    } else {
-                        Toast.makeText(this, "Cập nhật thất bại!", Toast.LENGTH_SHORT).show();
-                    }
-                    dialog.dismiss(); // Đóng hộp thoại
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        btnSave.setOnClickListener(v -> {
+            String newRole = radioGroup.getCheckedRadioButtonId() == R.id.radioUserRoleAdmin ? "ADMIN" : "USER";
+
+            boolean isUpdated = userRepository.updateUserRole(user.getId(), newRole);
+            if (isUpdated) {
+                Toast.makeText(this, "Đã cập nhật quyền thành " + newRole, Toast.LENGTH_SHORT).show();
+                loadDataFromDatabase();
+                dialog.dismiss();
+            } else {
+                Toast.makeText(this, "Cập nhật thất bại!", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
     }
 
     private void showDeleteConfirmDialog(User user) {

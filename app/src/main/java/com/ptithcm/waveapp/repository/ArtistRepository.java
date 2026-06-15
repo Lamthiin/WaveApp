@@ -7,8 +7,8 @@ import com.ptithcm.waveapp.database.DatabaseHelper;
 import com.ptithcm.waveapp.model.Artist;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
-import java.util.UUID;
 
 public class ArtistRepository {
 
@@ -159,7 +159,29 @@ public class ArtistRepository {
     }
 
     private String generateArtistId() {
-        return "a" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
+        Cursor c = db.rawQuery(
+                "SELECT " + DatabaseHelper.COL_ARTIST_ID +
+                        " FROM " + DatabaseHelper.TABLE_ARTISTS +
+                        " WHERE " + DatabaseHelper.COL_ARTIST_ID + " GLOB 'a[0-9]*'" +
+                        " ORDER BY CAST(SUBSTR(" + DatabaseHelper.COL_ARTIST_ID + ", 2) AS INTEGER) DESC LIMIT 1",
+                null
+        );
+        try {
+            int nextNumber = 1;
+            if (c != null && c.moveToFirst()) {
+                String lastId = c.getString(0);
+                if (lastId != null && lastId.length() > 1) {
+                    nextNumber = Integer.parseInt(lastId.substring(1)) + 1;
+                }
+            }
+            return String.format(Locale.US, "a%03d", nextNumber);
+        } catch (NumberFormatException e) {
+            return "a001";
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+        }
     }
 
     private Artist map(Cursor c) {
