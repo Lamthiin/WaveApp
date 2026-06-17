@@ -112,6 +112,10 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
 
     @Override
     protected void onStop() {
+        if (musicService != null) {
+            musicService.setPlaybackCallback(null);
+            musicService.setNavigationCallback(null);
+        }
         if (serviceBound) {
             unbindService(serviceConnection);
             serviceBound = false;
@@ -157,6 +161,10 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
     }
 
     protected void updateMiniPlayerFromService() {
+        if (isFinishing() || isDestroyed() || layoutMiniPlayer == null) {
+            return;
+        }
+
         if (musicService == null || !musicService.hasPlayer()) {
             hideMiniPlayer();
             return;
@@ -166,15 +174,17 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
         tvMiniSongTitle.setText(musicService.getCurrentTitle());
         tvMiniArtistName.setText(musicService.getCurrentArtist());
         updateMiniPlayButtonUI();
-        Glide.with(this)
-                .load(musicService.getCurrentImageUrl())
-                .placeholder(R.drawable.ic_logo)
-                .error(R.drawable.ic_logo)
-                .into(ivMiniAlbumArt);
+        if (ivMiniAlbumArt != null) {
+            Glide.with(this)
+                    .load(musicService.getCurrentImageUrl())
+                    .placeholder(R.drawable.ic_logo)
+                    .error(R.drawable.ic_logo)
+                    .into(ivMiniAlbumArt);
+        }
     }
 
     protected void hideMiniPlayer() {
-        if (layoutMiniPlayer != null) {
+        if (layoutMiniPlayer != null && !isDestroyed()) {
             layoutMiniPlayer.setVisibility(View.GONE);
         }
     }
@@ -226,6 +236,9 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
     }
 
     private void playMiniSong(Song song) {
+        if (isFinishing() || isDestroyed() || musicService == null || layoutMiniPlayer == null) {
+            return;
+        }
         String artistName = getArtistName(song);
         ContextCompat.startForegroundService(this, new Intent(this, MusicPlayerService.class));
         musicService.playNewSong(song.getId(), song.getUrl(), song.getName(), artistName, song.getImage());
@@ -233,11 +246,13 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
         tvMiniSongTitle.setText(song.getName());
         tvMiniArtistName.setText(artistName);
         updateMiniPlayButtonUI();
-        Glide.with(this)
-                .load(song.getImage())
-                .placeholder(R.drawable.ic_logo)
-                .error(R.drawable.ic_logo)
-                .into(ivMiniAlbumArt);
+        if (ivMiniAlbumArt != null) {
+            Glide.with(this)
+                    .load(song.getImage())
+                    .placeholder(R.drawable.ic_logo)
+                    .error(R.drawable.ic_logo)
+                    .into(ivMiniAlbumArt);
+        }
     }
 
     private String getArtistName(Song song) {
@@ -279,17 +294,23 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
 
     @Override
     public void onPrepared(int durationMs) {
-        updateMiniPlayerFromService();
+        if (!isFinishing() && !isDestroyed()) {
+            updateMiniPlayerFromService();
+        }
     }
 
     @Override
     public void onCompletion() {
-        playMiniSongByDirection(1);
+        if (!isFinishing() && !isDestroyed()) {
+            playMiniSongByDirection(1);
+        }
     }
 
     @Override
     public void onPlaybackStateChanged(boolean isPlaying) {
-        updateMiniPlayerFromService();
+        if (!isFinishing() && !isDestroyed()) {
+            updateMiniPlayerFromService();
+        }
     }
 
     @Override

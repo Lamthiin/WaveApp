@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_remove_favorite"
+        android:title="Xóa khỏi yêu thích" />
+    <item
+        android:id="@+id/action_view_artist"
+        android:title="Xem nghệ sĩ" />
+    <item
+        android:id="@+id/action_view_album"
+        android:title="Xem album" />
+</menu>

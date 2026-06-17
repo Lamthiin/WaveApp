@@ -149,6 +149,10 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     }
 
     private void updateMiniPlayerFromService() {
+        if (isFinishing() || isDestroyed() || layoutMiniPlayer == null) {
+            return;
+        }
+
         if (musicService == null || !musicService.hasPlayer()) {
             hideMiniPlayer();
             return;
@@ -158,15 +162,17 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         tvMiniSongTitle.setText(musicService.getCurrentTitle());
         tvMiniArtistName.setText(musicService.getCurrentArtist());
         updateMiniPlayButtonUI();
-        Glide.with(this)
-                .load(musicService.getCurrentImageUrl())
-                .placeholder(R.drawable.ic_logo)
-                .error(R.drawable.ic_logo)
-                .into(ivMiniAlbumArt);
+        if (ivMiniAlbumArt != null) {
+            Glide.with(this)
+                    .load(musicService.getCurrentImageUrl())
+                    .placeholder(R.drawable.ic_logo)
+                    .error(R.drawable.ic_logo)
+                    .into(ivMiniAlbumArt);
+        }
     }
 
     private void hideMiniPlayer() {
-        if (layoutMiniPlayer != null) {
+        if (layoutMiniPlayer != null && !isDestroyed()) {
             layoutMiniPlayer.setVisibility(View.GONE);
         }
     }
@@ -218,6 +224,9 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     }
 
     private void playMiniSong(Song song) {
+        if (isFinishing() || isDestroyed() || musicService == null || layoutMiniPlayer == null) {
+            return;
+        }
         String artistName = getArtistName(song);
         ContextCompat.startForegroundService(this, new Intent(this, MusicPlayerService.class));
         musicService.playNewSong(song.getId(), song.getUrl(), song.getName(), artistName, song.getImage());
@@ -229,11 +238,13 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         tvMiniSongTitle.setText(song.getName());
         tvMiniArtistName.setText(artistName);
         updateMiniPlayButtonUI();
-        Glide.with(this)
-                .load(song.getImage())
-                .placeholder(R.drawable.ic_logo)
-                .error(R.drawable.ic_logo)
-                .into(ivMiniAlbumArt);
+        if (ivMiniAlbumArt != null) {
+            Glide.with(this)
+                    .load(song.getImage())
+                    .placeholder(R.drawable.ic_logo)
+                    .error(R.drawable.ic_logo)
+                    .into(ivMiniAlbumArt);
+        }
     }
 
     private String getArtistName(Song song) {
@@ -282,6 +293,10 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
 
     @Override
     protected void onDestroy() {
+        if (musicService != null) {
+            musicService.setPlaybackCallback(null);
+            musicService.setNavigationCallback(null);
+        }
         if (serviceBound) {
             unbindService(serviceConnection);
             serviceBound = false;

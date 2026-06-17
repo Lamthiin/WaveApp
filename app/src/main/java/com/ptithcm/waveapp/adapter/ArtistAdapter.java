@@ -20,17 +20,24 @@ import java.util.List;
  */
 public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistViewHolder> {
 
+    public enum LayoutMode { GRID, LIST }
+
     public interface OnArtistClickListener  { void onArtistClick(Artist artist); }
     public interface OnFollowClickListener  { void onFollowClick(Artist artist, int position); }
 
     private List<Artist> artists;
     private OnArtistClickListener  onArtistClick;
     private OnFollowClickListener  onFollowClick;
+    private LayoutMode layoutMode = LayoutMode.GRID;
 
     public ArtistAdapter() { this.artists = new ArrayList<>(); }
 
     public void setOnArtistClickListener(OnArtistClickListener l) { this.onArtistClick = l; }
     public void setOnFollowClickListener(OnFollowClickListener l)  { this.onFollowClick  = l; }
+    public void setLayoutMode(LayoutMode mode) {
+        this.layoutMode = mode != null ? mode : LayoutMode.GRID;
+        notifyDataSetChanged();
+    }
 
     public void setArtists(List<Artist> artists) {
         this.artists = artists != null ? artists : new ArrayList<>();
@@ -41,7 +48,7 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistView
     @Override
     public ArtistViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_artist, parent, false);
+                .inflate(layoutMode == LayoutMode.LIST ? R.layout.item_search_artist : R.layout.item_artist, parent, false);
         return new ArtistViewHolder(view);
     }
 
@@ -61,6 +68,7 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistView
         });
 
         if (holder.btnFollow != null) {
+            holder.btnFollow.setVisibility(onFollowClick != null ? View.VISIBLE : View.GONE);
             String userId = new com.ptithcm.waveapp.util.TokenManager(ctx).getUserId();
             boolean isFollowing = false;
             if (userId != null) {

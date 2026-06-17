@@ -296,20 +296,6 @@ public class HomeFragment extends Fragment {
                     .centerCrop()
                     .into((ImageView) item.findViewById(R.id.imgAlbum));
 
-            ImageView btnLike = item.findViewById(R.id.btnLike);
-            if (btnLike != null) {
-                String userId = tokenManager.getUserId();
-                updateLikeIcon(btnLike, album.getId());
-
-                btnLike.setOnClickListener(v -> {
-                    if (userId == null) {
-                        Toast.makeText(getContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    toggleLikeAlbum(btnLike, album.getId());
-                });
-            }
-
             item.setOnClickListener(v -> {
                 Intent intent = new Intent(getActivity(), PlaylistDetailActivity.class);
                 intent.putExtra("ALBUM_ID", album.getId());
@@ -318,45 +304,6 @@ public class HomeFragment extends Fragment {
 
             albumContainer.addView(item);
         }
-    }
-
-    private void updateLikeIcon(ImageView btnLike, String albumId) {
-        String userId = tokenManager.getUserId();
-        if (userId == null) {
-            btnLike.setImageResource(R.drawable.ic_heart_outline);
-            btnLike.setColorFilter(Color.WHITE);
-            return;
-        }
-
-        new Thread(() -> {
-            boolean exists = ServiceLocator.getInstance().likedAlbumRepository.existsByUserIdAndAlbumId(userId, albumId);
-            requireActivity().runOnUiThread(() -> {
-                btnLike.setImageResource(exists ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
-                btnLike.setColorFilter(exists ? Color.parseColor("#1DB954") : Color.WHITE);
-            });
-        }).start();
-    }
-
-    private void toggleLikeAlbum(ImageView btnLike, String albumId) {
-        String userId = tokenManager.getUserId();
-        new Thread(() -> {
-            LikedAlbumRepository repo = ServiceLocator.getInstance().likedAlbumRepository;
-            boolean exists = repo.existsByUserIdAndAlbumId(userId, albumId);
-            if (exists) {
-                repo.deleteByUserIdAndAlbumId(userId, albumId);
-            } else {
-                com.ptithcm.waveapp.model.User user = new com.ptithcm.waveapp.model.User();
-                user.setId(userId);
-                Album album = new Album();
-                album.setId(albumId);
-                com.ptithcm.waveapp.model.LikedAlbum la = new com.ptithcm.waveapp.model.LikedAlbum();
-                la.setUser(user);
-                la.setAlbum(album);
-                la.setAddedAt(java.time.LocalDateTime.now().toString());
-                repo.save(la);
-            }
-            requireActivity().runOnUiThread(() -> updateLikeIcon(btnLike, albumId));
-        }).start();
     }
 
     private void displayArtists(List<Artist> artists) {

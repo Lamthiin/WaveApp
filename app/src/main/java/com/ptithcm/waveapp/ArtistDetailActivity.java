@@ -103,7 +103,7 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
 
         songAdapter.setOnSongClickListener(this::openMusicPlayer);
         songAdapter.setOnLikeClickListener(this::toggleLikeSong);
-        songAdapter.setOnMoreClickListener(this::showSongOptions);
+        songAdapter.setOnMoreClickListener((song, position, anchor) -> showSongOptions(song, position));
     }
 
     private void setupListeners() {

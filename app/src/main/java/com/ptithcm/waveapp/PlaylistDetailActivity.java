@@ -97,7 +97,7 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
             startActivity(intent);
         });
 
-        songAdapter.setOnMoreClickListener((song, position) -> {
+        songAdapter.setOnMoreClickListener((song, position, anchor) -> {
             if (!isAlbum) showSongOptions(song);
         });
 

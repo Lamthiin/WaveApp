@@ -23,7 +23,8 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     public enum ActionIconMode {
         ADD,
         DELETE,
-        HEART
+        HEART,
+        MORE
     }
 
     public interface OnSongClickListener {
@@ -35,7 +36,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
     }
 
     public interface OnMoreClickListener {
-        void onMoreClick(Song song, int position);
+        void onMoreClick(Song song, int position, View anchor);
     }
 
     private List<Song> songs;
@@ -137,6 +138,9 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
             }
             iconRes = isLiked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline;
             iconColor = isLiked ? context.getColor(R.color.spotify_green) : Color.WHITE;
+        } else if (actionIconMode == ActionIconMode.MORE) {
+            iconRes = R.drawable.ic_more_vert;
+            iconColor = Color.WHITE;
         } else if (actionIconMode == ActionIconMode.DELETE) {
             iconRes = R.drawable.ic_delete;
             iconColor = Color.parseColor("#FF5252");
@@ -169,7 +173,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 Song clickedSong = songs.get(adapterPosition);
 
                 if (onMoreClick != null) {
-                    onMoreClick.onMoreClick(clickedSong, adapterPosition);
+                    onMoreClick.onMoreClick(clickedSong, adapterPosition, v);
                 } else if (onLikeClick != null) {
                     onLikeClick.onLikeClick(clickedSong, adapterPosition);
                 }
@@ -187,7 +191,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 if (adapterPosition < 0 || adapterPosition >= songs.size()) return;
 
                 if (onMoreClick != null) {
-                    onMoreClick.onMoreClick(songs.get(adapterPosition), adapterPosition);
+                    onMoreClick.onMoreClick(songs.get(adapterPosition), adapterPosition, v);
                 }
             });
         }

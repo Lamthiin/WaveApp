@@ -72,7 +72,7 @@ public class AddSongsToPlaylistActivity extends BaseMiniPlayerActivity {
         rvResults.setLayoutManager(new LinearLayoutManager(this));
         rvResults.setAdapter(songAdapter);
 
-        songAdapter.setOnMoreClickListener((song, position) -> {
+        songAdapter.setOnMoreClickListener((song, position, anchor) -> {
             addSongToPlaylist(song, position);
         });
 

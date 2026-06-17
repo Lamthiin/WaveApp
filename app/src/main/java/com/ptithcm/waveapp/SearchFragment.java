@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,6 +59,7 @@ public class SearchFragment extends Fragment {
     private ArtistAdapter artistAdapter;
     private AlbumAdapter albumAdapter;
     private GenreAdapter genreAdapter;
+    private RecyclerView.ItemDecoration gridSpacingDecoration;
 
     private SongRepository songRepository;
     private ArtistRepository artistRepository;
@@ -114,6 +116,7 @@ public class SearchFragment extends Fragment {
         artistAdapter = new ArtistAdapter();
         albumAdapter = new AlbumAdapter();
         genreAdapter = new GenreAdapter();
+        gridSpacingDecoration = new GridSpacingItemDecoration(2, dpToPx(12));
 
         setupAdapterListeners();
     }
@@ -253,6 +256,7 @@ public class SearchFragment extends Fragment {
                     allSongs = songRepository.findAll();
                     if (getActivity() == null) return;
                     getActivity().runOnUiThread(() -> {
+                        configureResultsRecycler(false);
                         recyclerViewResults.setLayoutManager(new LinearLayoutManager(getContext()));
                         songAdapter.setSongs(allSongs);
                         recyclerViewResults.setAdapter(songAdapter);
@@ -263,6 +267,7 @@ public class SearchFragment extends Fragment {
                     allArtists = artistRepository.findByActiveTrue();
                     if (getActivity() == null) return;
                     getActivity().runOnUiThread(() -> {
+                        configureResultsRecycler(true);
                         recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
                         artistAdapter.setArtists(allArtists);
                         recyclerViewResults.setAdapter(artistAdapter);
@@ -273,6 +278,7 @@ public class SearchFragment extends Fragment {
                     allAlbums = albumRepository.findByActiveTrue();
                     if (getActivity() == null) return;
                     getActivity().runOnUiThread(() -> {
+                        configureResultsRecycler(true);
                         recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
                         albumAdapter.setAlbums(allAlbums);
                         recyclerViewResults.setAdapter(albumAdapter);
@@ -283,6 +289,7 @@ public class SearchFragment extends Fragment {
                     allGenres = genreRepository.findAll();
                     if (getActivity() == null) return;
                     getActivity().runOnUiThread(() -> {
+                        configureResultsRecycler(true);
                         recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
                         genreAdapter.setGenres(allGenres);
                         recyclerViewResults.setAdapter(genreAdapter);
@@ -339,5 +346,39 @@ public class SearchFragment extends Fragment {
         emptyTextView.setText(message);
         emptyTextView.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         recyclerViewResults.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+    }
+
+    private void configureResultsRecycler(boolean isGrid) {
+        while (recyclerViewResults.getItemDecorationCount() > 0) {
+            recyclerViewResults.removeItemDecorationAt(0);
+        }
+        if (isGrid) {
+            recyclerViewResults.addItemDecoration(gridSpacingDecoration);
+        }
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
+    }
+
+    private static class GridSpacingItemDecoration extends RecyclerView.ItemDecoration {
+        private final int spanCount;
+        private final int spacing;
+
+        GridSpacingItemDecoration(int spanCount, int spacing) {
+            this.spanCount = spanCount;
+            this.spacing = spacing;
+        }
+
+        @Override
+        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+            int position = parent.getChildAdapterPosition(view);
+            int column = position % spanCount;
+
+            outRect.left = column == 0 ? 0 : spacing / 2;
+            outRect.right = column == spanCount - 1 ? 0 : spacing / 2;
+            outRect.top = position < spanCount ? 0 : spacing / 2;
+            outRect.bottom = 0;
+        }
     }
 }

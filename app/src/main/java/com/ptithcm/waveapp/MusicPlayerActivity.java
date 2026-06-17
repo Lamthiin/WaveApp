@@ -238,6 +238,9 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     }
 
     private void updateUI(Song song) {
+        if (isFinishing() || isDestroyed()) {
+            return;
+        }
         tvSongTitle.setText(song.getName());
         if (song.getArtist() != null) {
             tvArtistName.setText(song.getArtist().getName());
@@ -723,6 +726,10 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     protected void onDestroy() {
         stopSeekBarUpdates();
         cancelSleepTimer();
+        if (musicService != null) {
+            musicService.setPlaybackCallback(null);
+            musicService.setNavigationCallback(null);
+        }
         if (serviceBound) {
             unbindService(serviceConnection);
             serviceBound = false;

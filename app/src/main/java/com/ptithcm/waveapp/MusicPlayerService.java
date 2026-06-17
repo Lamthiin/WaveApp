@@ -57,6 +57,7 @@ public class MusicPlayerService extends Service {
     private String currentArtist = "";
     private boolean prepared = false;
     private boolean repeatOne = false;
+    private boolean foregroundStarted = false;
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable notificationUpdateRunnable = new Runnable() {
         @Override
@@ -88,6 +89,8 @@ public class MusicPlayerService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        ensureForegroundStarted();
+
         if (intent != null && intent.getAction() != null) {
             switch (intent.getAction()) {
                 case ACTION_TOGGLE_PLAYBACK:
@@ -131,6 +134,8 @@ public class MusicPlayerService extends Service {
         currentArtist = artist != null ? artist : "";
         prepared = false;
 
+        ensureForegroundStarted();
+
         releasePlayer();
         mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioAttributes(
@@ -159,7 +164,7 @@ public class MusicPlayerService extends Service {
                     updateNotification(true);
                 } else {
                     stopNotificationUpdates();
-                    stopForeground(false);
+                    stopForegroundSafely(false);
                     if (callback != null) {
                         callback.onCompletion();
                         callback.onPlaybackStateChanged(false);
@@ -168,7 +173,7 @@ public class MusicPlayerService extends Service {
             });
             mediaPlayer.setOnErrorListener((mp, what, extra) -> {
                 Log.e(TAG, "MediaPlayer error: " + what + ", " + extra);
-                stopForeground(false);
+                stopForegroundSafely(false);
                 if (callback != null) {
                     callback.onPlaybackStateChanged(false);
                 }
@@ -240,7 +245,7 @@ public class MusicPlayerService extends Service {
 
     private void loadAlbumArtThenNotify(boolean playing) {
         if (currentImageUrl == null || currentImageUrl.isEmpty()) {
-            startForeground(NOTIFICATION_ID, buildNotification(playing, null));
+            startForegroundOrUpdate(buildNotification(playing, null));
             return;
         }
         new Thread(() -> {
@@ -250,9 +255,9 @@ public class MusicPlayerService extends Service {
                         .load(currentImageUrl)
                         .submit(256, 256)
                         .get();
-                startForeground(NOTIFICATION_ID, buildNotification(playing, bitmap));
+                startForegroundOrUpdate(buildNotification(playing, bitmap));
             } catch (Exception e) {
-                startForeground(NOTIFICATION_ID, buildNotification(playing, null));
+                startForegroundOrUpdate(buildNotification(playing, null));
             }
         }).start();
     }
@@ -298,7 +303,7 @@ public class MusicPlayerService extends Service {
     private void stopPlayback() {
         stopNotificationUpdates();
         releasePlayer();
-        stopForeground(true);
+        stopForegroundSafely(true);
     }
 
     private void releasePlayer() {
@@ -364,6 +369,32 @@ public class MusicPlayerService extends Service {
         return builder.build();
     }
 
+    private void ensureForegroundStarted() {
+        startForegroundOrUpdate(buildNotification(false, null));
+    }
+
+    private void startForegroundOrUpdate(Notification notification) {
+        if (!foregroundStarted) {
+            startForeground(NOTIFICATION_ID, notification);
+            foregroundStarted = true;
+            return;
+        }
+
+        NotificationManager manager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager != null) {
+            manager.notify(NOTIFICATION_ID, notification);
+        }
+    }
+
+    private void stopForegroundSafely(boolean removeNotification) {
+        if (!foregroundStarted) {
+            return;
+        }
+        stopForeground(removeNotification);
+        foregroundStarted = false;
+    }
+
     private void updateNotification(boolean playing) {
         if (currentImageUrl != null && !currentImageUrl.isEmpty()) {
             new Thread(() -> {
@@ -411,6 +442,7 @@ public class MusicPlayerService extends Service {
     public void onDestroy() {
         stopNotificationUpdates();
         releasePlayer();
+        foregroundStarted = false;
         super.onDestroy();
     }
 }

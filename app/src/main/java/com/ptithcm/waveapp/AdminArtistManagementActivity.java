@@ -47,7 +47,6 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
     private final List<Artist> hiddenArtists = new ArrayList<>();
     private final List<AdminOverviewAdapter.AdminOverviewItem> filteredArtistItems = new ArrayList<>();
     private AdminOverviewAdapter adapter;
-    private DatabaseHelper dbHelper;
     private ArtistRepository artistRepository;
     private EditText searchInput;
     private TextView filterActive;
@@ -71,8 +70,7 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
                 R.id.nav_admin_artists, "Quản lý nghệ sĩ");
 
         findViewById(R.id.tvSectionHint).setVisibility(View.GONE);
-        dbHelper = DatabaseHelper.getInstance(this);
-        artistRepository = new ArtistRepository(dbHelper);
+        artistRepository = new ArtistRepository(DatabaseHelper.getInstance(this));
         artistImagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
@@ -402,16 +400,10 @@ public class AdminArtistManagementActivity extends BaseAdminActivity {
     private void persistArtist(Artist artist, String name, String bio, String imageUrl, AlertDialog dialog,
                                MaterialButton btnSave, MaterialButton btnCancel) {
         if (artist == null) {
-            Artist createdArtist = dbHelper.insertArtistDirect(name, imageUrl, bio);
-            if (createdArtist != null) {
-                currentArtistTab = TAB_ACTIVE;
-                updateTabUI();
-                Toast.makeText(this, "Đã thêm nghệ sĩ mới", Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(this, "Thêm nghệ sĩ thất bại", Toast.LENGTH_SHORT).show();
-                restoreArtistDialogActions(btnSave, btnCancel, "Thêm");
-                return;
-            }
+            artistRepository.createArtist(name, imageUrl, bio);
+            currentArtistTab = TAB_ACTIVE;
+            updateTabUI();
+            Toast.makeText(this, "Đã thêm nghệ sĩ mới", Toast.LENGTH_SHORT).show();
         } else {
             boolean updated = artistRepository.updateArtist(artist.getId(), name, imageUrl, bio);
             Toast.makeText(this, updated ? "Đã cập nhật nghệ sĩ" : "Cập nhật thất bại", Toast.LENGTH_SHORT).show();

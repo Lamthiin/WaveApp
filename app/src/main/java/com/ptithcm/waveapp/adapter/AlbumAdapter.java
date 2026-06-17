@@ -14,11 +14,12 @@ import java.util.List;
 
 /**
  * Dùng cho:
- *   - HomeFragment         (Album nổi tiếng - cuộn ngang)
  *   - fragment_library     (tabAlbums - Album yêu thích)
  *   - fragment_search      (tabAlbums)
  */
 public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumViewHolder> {
+
+    public enum LayoutMode { GRID, LIST }
 
     public interface OnAlbumClickListener { void onAlbumClick(Album album); }
     public interface OnLikeClickListener  { void onLikeClick(Album album, int position); }
@@ -26,11 +27,16 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumViewHol
     private List<Album> albums;
     private OnAlbumClickListener onAlbumClick;
     private OnLikeClickListener  onLikeClick;
+    private LayoutMode layoutMode = LayoutMode.GRID;
 
     public AlbumAdapter() { this.albums = new ArrayList<>(); }
 
     public void setOnAlbumClickListener(OnAlbumClickListener l) { this.onAlbumClick = l; }
     public void setOnLikeClickListener(OnLikeClickListener l)   { this.onLikeClick  = l; }
+    public void setLayoutMode(LayoutMode mode) {
+        this.layoutMode = mode != null ? mode : LayoutMode.GRID;
+        notifyDataSetChanged();
+    }
 
     public void setAlbums(List<Album> albums) {
         this.albums = albums != null ? albums : new ArrayList<>();
@@ -41,7 +47,7 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumViewHol
     @Override
     public AlbumViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_album, parent, false);
+                .inflate(layoutMode == LayoutMode.LIST ? R.layout.item_album_list : R.layout.item_album_grid, parent, false);
         return new AlbumViewHolder(view);
     }
 
