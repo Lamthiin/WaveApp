@@ -25,9 +25,6 @@ public class User {
     @Builder.Default
     private boolean active = true;
 
-    @Builder.Default
-    private boolean verified = false;
-
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

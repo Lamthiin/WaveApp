@@ -68,7 +68,6 @@ public class UserRepository {
         cv.put(DatabaseHelper.COL_USER_NAME, user.getName());
         cv.put(DatabaseHelper.COL_USER_AVATAR, user.getAvatar());
         cv.put(DatabaseHelper.COL_USER_ROLE, user.getRole());
-        cv.put(DatabaseHelper.COL_USER_VERIFIED, user.isVerified() ? 1 : 0);
         cv.put(DatabaseHelper.COL_USER_UPDATED_AT, LocalDateTime.now().toString());
 
         db.insertWithOnConflict(
@@ -116,7 +115,6 @@ public class UserRepository {
                 .avatar(avatar)
                 .password("")
                 .role("USER")
-                .verified(true)
                 .build();
 
         save(user);
@@ -152,7 +150,6 @@ public class UserRepository {
                 .name(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_USER_NAME)))
                 .avatar(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_USER_AVATAR)))
                 .role(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_USER_ROLE)))
-                .verified(c.getInt(c.getColumnIndexOrThrow(DatabaseHelper.COL_USER_VERIFIED)) == 1)
                 .createdAt(parseDate(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_USER_CREATED_AT))))
                 .updatedAt(parseDate(c.getString(c.getColumnIndexOrThrow(DatabaseHelper.COL_USER_UPDATED_AT))))
                 .build();

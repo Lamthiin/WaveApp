@@ -26,8 +26,7 @@ public class AuthService {
         User user = userRepo.findByIdentifier(identifier)
                 .orElseThrow(() -> new RuntimeException("Tài khoản không tồn tại"));
         if (!user.isActive())   throw new RuntimeException("Tài khoản đã bị khóa");
-        if (!user.isVerified()) throw new RuntimeException("Tài khoản chưa xác thực email");
-        
+
         // Kiểm tra mật khẩu đã băm
         if (!BCrypt.checkpw(rawPassword, user.getPassword()))
             throw new RuntimeException("Mật khẩu không đúng");
@@ -71,11 +70,10 @@ public class AuthService {
                     .email(identifier)
                     .password(data[2])
                     .role("USER")
-                    .verified(true).active(true)
+                    .active(true)
                     .build();
             userRepo.save(user);
         } else {
-            user.setVerified(true);
             userRepo.save(user);
         }
         return user;

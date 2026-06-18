@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME    = "wave_app.db";
-    private static final int    DATABASE_VERSION = 3;
+    private static final int    DATABASE_VERSION = 1;
 
     private static DatabaseHelper instance;
     public static synchronized DatabaseHelper getInstance(Context ctx) {
@@ -35,7 +35,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String COL_USER_NAME       = "name";
     public static final String COL_USER_AVATAR     = "avatar";
     public static final String COL_USER_ROLE       = "role";
-    public static final String COL_USER_VERIFIED   = "verified";
     public static final String COL_USER_CREATED_AT = "created_at";
     public static final String COL_USER_UPDATED_AT = "updated_at";
 
@@ -124,7 +123,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COL_USER_NAME + " TEXT," +
                 COL_USER_AVATAR + " TEXT," +
                 COL_USER_ROLE + " TEXT DEFAULT 'USER'," +
-                COL_USER_VERIFIED + " INTEGER DEFAULT 0," +
                 COL_USER_CREATED_AT + " TEXT DEFAULT (datetime('now'))," +
                 COL_USER_UPDATED_AT + " TEXT DEFAULT (datetime('now')))");
 
@@ -215,11 +213,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // 1. TABLE USERS
         db.execSQL("INSERT INTO " + TABLE_USERS + " VALUES" +
-                "('u001','dev','dev@wave.com','$2a$12$dAHDlXmMPT9SXbITlkNEM.XT4bgIRhCJ804p6SR3f90otTwV/9AIm','Dev',NULL,'ADMIN',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
-                "('u002','admin','admin@wave.com','$2a$12$m1d70IyAOOA4VlZ.MaHFJu6ZTQu5Izbu.xntueTChqGRYgFMO/qB6','Admin',NULL,'ADMIN',1,'2026-05-01T00:00:00.0','2026-05-01T00:00:20.0')," +
-                "('u003','usera','a@gmail.com','$2a$12$Pp/lKLhmqMgYWWxfpvpRReztpj4aUCEN2KnTLUOzr3IJKXopTv5hG','Nguyễn Văn A',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
-                "('u004','userb','b@gmail.com','$2a$12$43vYkiVmDCJ0lDEVCbQHzujGG2RXcem7jb5wyvOoB4E3fDcyImaG2','Trần Văn B',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
-                "('u005','userc','c@gmail.com','$2a$12$5jki0VST/gEnozz/REEPJuFSsBkdiEAa/kvHtn/SlChxTG1CeeauC','Lê Thị C',NULL,'USER',1,'2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')");
+                "('u001','dev','dev@wave.com','$2a$12$dAHDlXmMPT9SXbITlkNEM.XT4bgIRhCJ804p6SR3f90otTwV/9AIm','Dev',NULL,'ADMIN','2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u002','admin','admin@wave.com','$2a$12$m1d70IyAOOA4VlZ.MaHFJu6ZTQu5Izbu.xntueTChqGRYgFMO/qB6','Admin',NULL,'ADMIN','2026-05-01T00:00:00.0','2026-05-01T00:00:20.0')," +
+                "('u003','usera','a@gmail.com','$2a$12$Pp/lKLhmqMgYWWxfpvpRReztpj4aUCEN2KnTLUOzr3IJKXopTv5hG','Nguyễn Văn A',NULL,'USER','2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u004','userb','b@gmail.com','$2a$12$43vYkiVmDCJ0lDEVCbQHzujGG2RXcem7jb5wyvOoB4E3fDcyImaG2','Trần Văn B',NULL,'USER','2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')," +
+                "('u005','userc','c@gmail.com','$2a$12$5jki0VST/gEnozz/REEPJuFSsBkdiEAa/kvHtn/SlChxTG1CeeauC','Lê Thị C',NULL,'USER','2026-05-02T00:00:00.0','2026-05-02T00:00:00.0')");
 
         // 2. TABLE GENRES
         db.execSQL("INSERT INTO " + TABLE_GENRES + " VALUES" +
@@ -465,5 +463,59 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COL_SONG_URL, songUrl);
         values.put(COL_SONG_IMAGE, imageUrl);
         db.update(TABLE_SONGS, values, COL_SONG_ID + "=?", new String[]{id});
+    }
+
+
+    public Artist insertArtistDirect(String name, String image, String bio) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        String artistId = generateNextArtistId(db);
+
+        ContentValues values = new ContentValues();
+        values.put(COL_ARTIST_ID, artistId);
+        values.put(COL_ARTIST_NAME, name);
+        values.put(COL_ARTIST_IMAGE, image);
+        values.put(COL_ARTIST_BIO, bio);
+        values.put(COL_ARTIST_FOLLOWERS, 0);
+        values.put(COL_ARTIST_ACTIVE, 1);
+
+        long rowId = db.insertWithOnConflict(TABLE_ARTISTS, null, values, SQLiteDatabase.CONFLICT_REPLACE);
+        if (rowId == -1) {
+            return null;
+        }
+
+        return Artist.builder()
+                .id(artistId)
+                .name(name)
+                .image(image)
+                .bio(bio)
+                .followersCount(0)
+                .active(true)
+                .build();
+    }
+
+    private String generateNextArtistId(SQLiteDatabase db) {
+        Cursor c = db.rawQuery(
+                "SELECT " + COL_ARTIST_ID +
+                        " FROM " + TABLE_ARTISTS +
+                        " WHERE " + COL_ARTIST_ID + " GLOB 'a[0-9]*'" +
+                        " ORDER BY CAST(SUBSTR(" + COL_ARTIST_ID + ", 2) AS INTEGER) DESC LIMIT 1",
+                null
+        );
+        try {
+            int nextNumber = 1;
+            if (c != null && c.moveToFirst()) {
+                String lastId = c.getString(0);
+                if (lastId != null && lastId.length() > 1) {
+                    nextNumber = Integer.parseInt(lastId.substring(1)) + 1;
+                }
+            }
+            return String.format(Locale.US, "a%03d", nextNumber);
+        } catch (NumberFormatException e) {
+            return "a001";
+        } finally {
+            if (c != null) {
+                c.close();
+            }
+        }
     }
 }
