@@ -8,6 +8,7 @@ import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,6 +20,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.ptithcm.waveapp.adapter.AlbumAdapter;
 import com.ptithcm.waveapp.adapter.ArtistAdapter;
 import com.ptithcm.waveapp.adapter.GenreAdapter;
@@ -38,6 +40,7 @@ import com.ptithcm.waveapp.repository.LikedAlbumRepository;
 import com.ptithcm.waveapp.repository.LikedSongRepository;
 import com.ptithcm.waveapp.repository.SongRepository;
 import com.ptithcm.waveapp.repository.UserFollowArtistRepository;
+import com.ptithcm.waveapp.service.PlaylistService;
 import com.ptithcm.waveapp.util.TokenManager;
 
 import java.time.LocalDateTime;
@@ -68,6 +71,7 @@ public class SearchFragment extends Fragment {
     private LikedSongRepository likedSongRepository;
     private LikedAlbumRepository likedAlbumRepository;
     private UserFollowArtistRepository followRepository;
+    private PlaylistService playlistService;
     private TokenManager tokenManager;
 
     private List<Song> allSongs = new ArrayList<>();
@@ -99,6 +103,7 @@ public class SearchFragment extends Fragment {
         likedSongRepository = locator.likedSongRepository;
         likedAlbumRepository = locator.likedAlbumRepository;
         followRepository = locator.userFollowArtistRepository;
+        playlistService = locator.getPlaylistService();
         tokenManager = new TokenManager(requireContext());
     }
 
@@ -112,8 +117,10 @@ public class SearchFragment extends Fragment {
         emptyTextView = view.findViewById(R.id.emptyTextView);
 
         songAdapter = new SongAdapter();
-        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.HEART);
+        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.MORE);
+        songAdapter.setShowIndex(false);
         artistAdapter = new ArtistAdapter();
+        artistAdapter.setLayoutMode(ArtistAdapter.LayoutMode.LIST);
         albumAdapter = new AlbumAdapter();
         genreAdapter = new GenreAdapter();
         gridSpacingDecoration = new GridSpacingItemDecoration(2, dpToPx(12));
@@ -130,22 +137,8 @@ public class SearchFragment extends Fragment {
             startActivity(intent);
         });
 
-        songAdapter.setOnLikeClickListener((song, position) -> {
-            String userId = tokenManager.getUserId();
-            if (userId == null) return;
-            if (likedSongRepository.existsByUserIdAndSongId(userId, song.getId())) {
-                likedSongRepository.deleteByUserIdAndSongId(userId, song.getId());
-                songRepository.decrementLikeCount(song.getId());
-            } else {
-                LikedSong likedSong = LikedSong.builder()
-                        .user(User.builder().id(userId).build())
-                        .song(song)
-                        .likedAt(LocalDateTime.now().toString())
-                        .build();
-                likedSongRepository.save(likedSong);
-                songRepository.incrementLikeCount(song.getId());
-            }
-            songAdapter.notifyItemChanged(position);
+        songAdapter.setOnMoreClickListener((song, position, anchor) -> {
+            showSongActionSheet(song, position);
         });
 
         artistAdapter.setOnArtistClickListener(artist -> {
@@ -157,7 +150,8 @@ public class SearchFragment extends Fragment {
         artistAdapter.setOnFollowClickListener((artist, position) -> {
             String userId = tokenManager.getUserId();
             if (userId == null) return;
-            if (followRepository.existsByUserIdAndArtistId(userId, artist.getId())) {
+            boolean isFollowing = followRepository.existsByUserIdAndArtistId(userId, artist.getId());
+            if (isFollowing) {
                 followRepository.deleteByUserIdAndArtistId(userId, artist.getId());
                 artistRepository.decrementFollowers(artist.getId());
             } else {
@@ -170,6 +164,11 @@ public class SearchFragment extends Fragment {
                 artistRepository.incrementFollowers(artist.getId());
             }
             artistAdapter.notifyItemChanged(position);
+            Toast.makeText(
+                    getContext(),
+                    isFollowing ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích",
+                    Toast.LENGTH_SHORT
+            ).show();
         });
 
         albumAdapter.setOnAlbumClickListener(album -> {
@@ -186,7 +185,8 @@ public class SearchFragment extends Fragment {
             }
             new Thread(() -> {
                 LikedAlbumRepository repo = ServiceLocator.getInstance().likedAlbumRepository;
-                if (repo.existsByUserIdAndAlbumId(userId, album.getId())) {
+                boolean isLiked = repo.existsByUserIdAndAlbumId(userId, album.getId());
+                if (isLiked) {
                     repo.deleteByUserIdAndAlbumId(userId, album.getId());
                 } else {
                     com.ptithcm.waveapp.model.User user = new com.ptithcm.waveapp.model.User();
@@ -197,7 +197,15 @@ public class SearchFragment extends Fragment {
                     la.setAddedAt(java.time.LocalDateTime.now().toString());
                     repo.save(la);
                 }
-                getActivity().runOnUiThread(() -> albumAdapter.notifyItemChanged(position));
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() -> {
+                    albumAdapter.notifyItemChanged(position);
+                    Toast.makeText(
+                            getContext(),
+                            isLiked ? "Đã xóa khỏi yêu thích" : "Đã thêm vào yêu thích",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                });
             }).start();
         });
 
@@ -208,6 +216,135 @@ public class SearchFragment extends Fragment {
             intent.putExtra("GENRE_IMAGE_URL", genre.getImageUrl());
             startActivity(intent);
         });
+    }
+
+    private void showSongActionSheet(Song song, int position) {
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_search_song_actions, null, false);
+
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        dialog.setContentView(dialogView);
+
+        TextView tvSongName = dialogView.findViewById(R.id.tvSearchSongActionTitle);
+        View optionFavorite = dialogView.findViewById(R.id.optionAddSongFavorite);
+        View optionPlaylist = dialogView.findViewById(R.id.optionAddSongPlaylist);
+        View optionCancel = dialogView.findViewById(R.id.tvSearchSongActionCancel);
+
+        tvSongName.setText(song.getName());
+
+        optionFavorite.setOnClickListener(v -> {
+            dialog.dismiss();
+            addSongToFavorites(song, position);
+        });
+
+        optionPlaylist.setOnClickListener(v -> {
+            dialog.dismiss();
+            showPlaylistPickerSheet(song);
+        });
+
+        optionCancel.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void addSongToFavorites(Song song, int position) {
+        String userId = tokenManager.getUserId();
+        if (userId == null) {
+            Toast.makeText(getContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new Thread(() -> {
+            boolean alreadyLiked = likedSongRepository.existsByUserIdAndSongId(userId, song.getId());
+            if (alreadyLiked) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() ->
+                        Toast.makeText(getContext(), "Bài hát đã có trong yêu thích", Toast.LENGTH_SHORT).show());
+                return;
+            }
+
+            LikedSong likedSong = LikedSong.builder()
+                    .user(User.builder().id(userId).build())
+                    .song(song)
+                    .likedAt(LocalDateTime.now().toString())
+                    .build();
+
+            likedSongRepository.save(likedSong);
+            songRepository.incrementLikeCount(song.getId());
+
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> {
+                songAdapter.notifyItemChanged(position);
+                Toast.makeText(getContext(), "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+            });
+        }).start();
+    }
+
+    private void showPlaylistPickerSheet(Song song) {
+        String userId = tokenManager.getUserId();
+        if (userId == null) {
+            Toast.makeText(getContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new Thread(() -> {
+            List<com.ptithcm.waveapp.model.Playlist> playlists = playlistService.getMyPlaylists(userId);
+            if (getActivity() == null) return;
+
+            getActivity().runOnUiThread(() -> {
+                if (playlists.isEmpty()) {
+                    Toast.makeText(getContext(), "Bạn chưa có playlist nào", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                View dialogView = LayoutInflater.from(requireContext())
+                        .inflate(R.layout.dialog_search_playlist_picker, null, false);
+
+                BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+                dialog.setContentView(dialogView);
+
+                LinearLayout container = dialogView.findViewById(R.id.layoutPlaylistOptions);
+                View cancelView = dialogView.findViewById(R.id.tvSearchPlaylistCancel);
+
+                for (com.ptithcm.waveapp.model.Playlist playlist : playlists) {
+                    TextView optionView = new TextView(requireContext());
+                    optionView.setLayoutParams(new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dpToPx(50)
+                    ));
+                    optionView.setGravity(android.view.Gravity.CENTER_VERTICAL);
+                    optionView.setPadding(dpToPx(24), 0, dpToPx(24), 0);
+                    optionView.setText(playlist.getName());
+                    optionView.setTextColor(requireContext().getColor(R.color.white));
+                    optionView.setTextSize(18);
+                    optionView.setOnClickListener(v -> {
+                        dialog.dismiss();
+                        addSongToPlaylist(playlist.getId(), song);
+                    });
+                    container.addView(optionView);
+                }
+
+                cancelView.setOnClickListener(v -> dialog.dismiss());
+                dialog.show();
+            });
+        }).start();
+    }
+
+    private void addSongToPlaylist(String playlistId, Song song) {
+        String userId = tokenManager.getUserId();
+        if (userId == null) return;
+
+        new Thread(() -> {
+            try {
+                playlistService.addSong(playlistId, song.getId(), userId);
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() ->
+                        Toast.makeText(getContext(), "Đã thêm vào playlist", Toast.LENGTH_SHORT).show());
+            } catch (Exception e) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() ->
+                        Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show());
+            }
+        }).start();
     }
 
     private void setupTabs() {
@@ -267,8 +404,8 @@ public class SearchFragment extends Fragment {
                     allArtists = artistRepository.findByActiveTrue();
                     if (getActivity() == null) return;
                     getActivity().runOnUiThread(() -> {
-                        configureResultsRecycler(true);
-                        recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
+                        configureResultsRecycler(false);
+                        recyclerViewResults.setLayoutManager(new LinearLayoutManager(getContext()));
                         artistAdapter.setArtists(allArtists);
                         recyclerViewResults.setAdapter(artistAdapter);
                         toggleEmptyView(allArtists.isEmpty(), "Không có nghệ sĩ");
@@ -278,8 +415,8 @@ public class SearchFragment extends Fragment {
                     allAlbums = albumRepository.findByActiveTrue();
                     if (getActivity() == null) return;
                     getActivity().runOnUiThread(() -> {
-                        configureResultsRecycler(true);
-                        recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
+                        configureResultsRecycler(3, 10);
+                        recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 3));
                         albumAdapter.setAlbums(allAlbums);
                         recyclerViewResults.setAdapter(albumAdapter);
                         toggleEmptyView(allAlbums.isEmpty(), "Không có album");
@@ -289,8 +426,8 @@ public class SearchFragment extends Fragment {
                     allGenres = genreRepository.findAll();
                     if (getActivity() == null) return;
                     getActivity().runOnUiThread(() -> {
-                        configureResultsRecycler(true);
-                        recyclerViewResults.setLayoutManager(new GridLayoutManager(getContext(), 2));
+                        configureResultsRecycler(2, 8);
+                        recyclerViewResults.setLayoutManager(createGenreGridLayoutManager());
                         genreAdapter.setGenres(allGenres);
                         recyclerViewResults.setAdapter(genreAdapter);
                         toggleEmptyView(allGenres.isEmpty(), "Không có thể loại");
@@ -355,6 +492,26 @@ public class SearchFragment extends Fragment {
         if (isGrid) {
             recyclerViewResults.addItemDecoration(gridSpacingDecoration);
         }
+    }
+
+    private void configureResultsRecycler(int spanCount, int spacingDp) {
+        while (recyclerViewResults.getItemDecorationCount() > 0) {
+            recyclerViewResults.removeItemDecorationAt(0);
+        }
+        recyclerViewResults.addItemDecoration(new GridSpacingItemDecoration(spanCount, dpToPx(spacingDp)));
+    }
+
+    private GridLayoutManager createGenreGridLayoutManager() {
+        GridLayoutManager layoutManager = new GridLayoutManager(getContext(), 2);
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                int itemCount = genreAdapter != null ? genreAdapter.getItemCount() : 0;
+                boolean isLastOddItem = itemCount % 2 == 1 && position == itemCount - 1;
+                return isLastOddItem ? 2 : 1;
+            }
+        });
+        return layoutManager;
     }
 
     private int dpToPx(int dp) {

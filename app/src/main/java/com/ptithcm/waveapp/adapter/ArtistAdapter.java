@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistViewHolder> {
 
-    public enum LayoutMode { GRID, LIST }
+    public enum LayoutMode { GRID, LIST, SEARCH_GRID }
 
     public interface OnArtistClickListener  { void onArtistClick(Artist artist); }
     public interface OnFollowClickListener  { void onFollowClick(Artist artist, int position); }
@@ -47,8 +47,17 @@ public class ArtistAdapter extends RecyclerView.Adapter<ArtistAdapter.ArtistView
     @NonNull
     @Override
     public ArtistViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        int layoutRes;
+        if (layoutMode == LayoutMode.LIST) {
+            layoutRes = R.layout.item_search_artist;
+        } else if (layoutMode == LayoutMode.SEARCH_GRID) {
+            layoutRes = R.layout.item_search_artist_grid;
+        } else {
+            layoutRes = R.layout.item_artist;
+        }
+
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(layoutMode == LayoutMode.LIST ? R.layout.item_search_artist : R.layout.item_artist, parent, false);
+                .inflate(layoutRes, parent, false);
         return new ArtistViewHolder(view);
     }
 

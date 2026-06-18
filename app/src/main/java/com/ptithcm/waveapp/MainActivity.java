@@ -46,6 +46,11 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     private final Random random = new Random();
     private boolean shuffleEnabled = false;
     private int currentIndex = -1;
+    private final Runnable miniPlayerStateSyncRunnable = this::updateMiniPlayerFromService;
+    private final MusicPlayerService.NavigationCallback miniNavigationCallback = new MusicPlayerService.NavigationCallback() {
+        @Override public void onSkipToPrevious() { runOnUiThread(() -> playMiniSongByDirection(-1)); }
+        @Override public void onSkipToNext()     { runOnUiThread(() -> playMiniSongByDirection(1)); }
+    };
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -54,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
             musicService = binder.getService();
             serviceBound = true;
             musicService.setPlaybackCallback(MainActivity.this);
+            musicService.setNavigationCallback(miniNavigationCallback);
             updateMiniPlayerFromService();
             loadPlaybackQueue(musicService.getCurrentSongId());
         }
@@ -231,13 +237,13 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         ContextCompat.startForegroundService(this, new Intent(this, MusicPlayerService.class));
         musicService.playNewSong(song.getId(), song.getUrl(), song.getName(), artistName, song.getImage());
         updateMiniPlayerFromSong(song, artistName);
+        if (btnMiniPlay != null) btnMiniPlay.setImageResource(R.drawable.pausemusic);
     }
 
     private void updateMiniPlayerFromSong(Song song, String artistName) {
         layoutMiniPlayer.setVisibility(View.VISIBLE);
         tvMiniSongTitle.setText(song.getName());
         tvMiniArtistName.setText(artistName);
-        updateMiniPlayButtonUI();
         if (ivMiniAlbumArt != null) {
             Glide.with(this)
                     .load(song.getImage())
@@ -266,6 +272,7 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
         if (musicService == null || !musicService.hasPlayer()) return;
         musicService.togglePlayback();
         updateMiniPlayButtonUI();
+        scheduleMiniPlayerStateSync();
     }
 
     private void updateMiniShuffleButtonUI() {
@@ -294,8 +301,8 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
     @Override
     protected void onDestroy() {
         if (musicService != null) {
-            musicService.setPlaybackCallback(null);
-            musicService.setNavigationCallback(null);
+            musicService.clearPlaybackCallbackIfMatches(this);
+            musicService.clearNavigationCallbackIfMatches(miniNavigationCallback);
         }
         if (serviceBound) {
             unbindService(serviceConnection);
@@ -306,18 +313,25 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
 
     @Override
     public void onPrepared(int durationMs) {
-        updateMiniPlayerFromService();
+        runOnUiThread(() -> {
+            updateMiniPlayerFromService();
+            updateMiniPlayButtonUI();
+            scheduleMiniPlayerStateSync();
+        });
     }
 
     @Override
     public void onCompletion() {
-        playMiniSongByDirection(1);
+        runOnUiThread(() -> playMiniSongByDirection(1));
     }
 
     @Override
     public void onPlaybackStateChanged(boolean isPlaying) {
-        updateMiniPlayerFromService();
-        updateMiniPlayButtonUI();
+        runOnUiThread(() -> {
+            updateMiniPlayerFromService();
+            updateMiniPlayButtonUI();
+            scheduleMiniPlayerStateSync();
+        });
     }
 
     @Override
@@ -327,5 +341,14 @@ public class MainActivity extends AppCompatActivity implements MusicPlayerServic
 
     private void syncDataFromFirebase() {
         // Firebase sync can be added here if remote data is needed later.
+    }
+
+    private void scheduleMiniPlayerStateSync() {
+        if (layoutMiniPlayer == null) return;
+
+        layoutMiniPlayer.removeCallbacks(miniPlayerStateSyncRunnable);
+        layoutMiniPlayer.postDelayed(miniPlayerStateSyncRunnable, 150);
+        layoutMiniPlayer.postDelayed(miniPlayerStateSyncRunnable, 450);
+        layoutMiniPlayer.postDelayed(miniPlayerStateSyncRunnable, 900);
     }
 }

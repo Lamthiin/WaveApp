@@ -35,22 +35,31 @@ import com.ptithcm.waveapp.repository.PlaylistRepository;
 import com.ptithcm.waveapp.repository.SongRepository;
 import com.ptithcm.waveapp.repository.UserFollowArtistRepository;
 import com.ptithcm.waveapp.repository.UserRepository;
+import com.ptithcm.waveapp.ServiceLocator;
 import com.ptithcm.waveapp.service.HomeService;
+import com.ptithcm.waveapp.service.PlaylistService;
 import com.ptithcm.waveapp.service.UserProfileService;
 import com.ptithcm.waveapp.util.TokenManager;
 
+import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class HomeFragment extends Fragment {
 
     private HomeService homeService;
     private UserProfileService userProfileService;
     private TokenManager tokenManager;
+    private LikedSongRepository likedSongRepository;
+    private PlaylistService playlistService;
 
     private LinearLayout albumContainer;
     private LinearLayout artistContainer;
     private LinearLayout genreContainer;
     private LinearLayout chartContainer;
+    private TextView btnChartToggle;
+    private View chartSectionCard;
 
     private ScrollView homeScrollView;
     private RecyclerView rvAllSongs;
@@ -62,6 +71,8 @@ public class HomeFragment extends Fragment {
 
     private TextView btnFilterAll;
     private TextView btnFilterMusic;
+    private final List<Song> topChartSongs = new ArrayList<>();
+    private boolean chartsExpanded = false;
 
     @Nullable
     @Override
@@ -78,6 +89,7 @@ public class HomeFragment extends Fragment {
         UserRepository userRepo = new UserRepository(db);
 
         LikedSongRepository likedSongRepo = new LikedSongRepository(db);
+        likedSongRepository = likedSongRepo;
         LikedAlbumRepository likedAlbumRepo = new LikedAlbumRepository(db);
         UserFollowArtistRepository followRepo = new UserFollowArtistRepository(db);
         PlaylistRepository playlistRepo = new PlaylistRepository(db);
@@ -94,6 +106,7 @@ public class HomeFragment extends Fragment {
                 albumRepo
         );
 
+        playlistService = ServiceLocator.getInstance().getPlaylistService();
         tokenManager = new TokenManager(requireContext());
 
         View view = inflater.inflate(R.layout.fragment_home, container, false);
@@ -102,6 +115,8 @@ public class HomeFragment extends Fragment {
         artistContainer = view.findViewById(R.id.artist_container);
         genreContainer = view.findViewById(R.id.genre_container);
         chartContainer = view.findViewById(R.id.chart_container);
+        btnChartToggle = view.findViewById(R.id.btn_chart_toggle);
+        chartSectionCard = view.findViewById(R.id.chart_section_card);
         homeScrollView = view.findViewById(R.id.home_scroll_view);
         rvAllSongs = view.findViewById(R.id.rv_all_songs);
         imgAvt = view.findViewById(R.id.img_avt);
@@ -134,7 +149,7 @@ public class HomeFragment extends Fragment {
                 }
 
                 if (top50 != null && chartContainer != null) {
-                    displaySongs(top50, chartContainer);
+                    setupChartSection(top50);
                 }
             });
 
@@ -208,6 +223,8 @@ public class HomeFragment extends Fragment {
     private void setupRecyclerView() {
         if (rvAllSongs != null) {
             allSongsAdapter = new SongAdapter();
+            allSongsAdapter.setShowIndex(false);
+            allSongsAdapter.setActionIconMode(SongAdapter.ActionIconMode.MORE);
 
             rvAllSongs.setLayoutManager(new LinearLayoutManager(getContext()));
             rvAllSongs.setAdapter(allSongsAdapter);
@@ -219,7 +236,114 @@ public class HomeFragment extends Fragment {
                 intent.putExtra("QUEUE_LIST", new java.util.ArrayList<>(allSongsAdapter.getSongs()));
                 startActivity(intent);
             });
+
+            allSongsAdapter.setOnMoreClickListener((song, position, anchor) ->
+                    showSongActionSheet(song, position));
         }
+    }
+
+    private void showSongActionSheet(Song song, int position) {
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_search_song_actions, null, false);
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+        dialog.setContentView(dialogView);
+
+        TextView tvSongName = dialogView.findViewById(R.id.tvSearchSongActionTitle);
+        View optionFavorite = dialogView.findViewById(R.id.optionAddSongFavorite);
+        View optionPlaylist = dialogView.findViewById(R.id.optionAddSongPlaylist);
+        View optionCancel = dialogView.findViewById(R.id.tvSearchSongActionCancel);
+
+        tvSongName.setText(song.getName());
+        optionFavorite.setOnClickListener(v -> { dialog.dismiss(); addSongToFavorites(song, position); });
+        optionPlaylist.setOnClickListener(v -> { dialog.dismiss(); showPlaylistPickerSheet(song); });
+        optionCancel.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void addSongToFavorites(Song song, int position) {
+        String userId = tokenManager.getUserId();
+        if (userId == null) {
+            Toast.makeText(getContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new Thread(() -> {
+            boolean alreadyLiked = likedSongRepository.existsByUserIdAndSongId(userId, song.getId());
+            if (alreadyLiked) {
+                if (getActivity() == null) return;
+                getActivity().runOnUiThread(() ->
+                        Toast.makeText(getContext(), "Bài hát đã có trong yêu thích", Toast.LENGTH_SHORT).show());
+                return;
+            }
+            com.ptithcm.waveapp.model.LikedSong likedSong = com.ptithcm.waveapp.model.LikedSong.builder()
+                    .user(User.builder().id(userId).build())
+                    .song(song)
+                    .likedAt(java.time.LocalDateTime.now().toString())
+                    .build();
+            likedSongRepository.save(likedSong);
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> {
+                allSongsAdapter.notifyItemChanged(position);
+                Toast.makeText(getContext(), "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+            });
+        }).start();
+    }
+
+    private void showPlaylistPickerSheet(Song song) {
+        String userId = tokenManager.getUserId();
+        if (userId == null) {
+            Toast.makeText(getContext(), "Vui lòng đăng nhập", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new Thread(() -> {
+            java.util.List<com.ptithcm.waveapp.model.Playlist> playlists = playlistService.getMyPlaylists(userId);
+            if (getActivity() == null) return;
+            getActivity().runOnUiThread(() -> {
+                if (playlists.isEmpty()) {
+                    Toast.makeText(getContext(), "Bạn chưa có playlist nào", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                View dialogView = LayoutInflater.from(requireContext())
+                        .inflate(R.layout.dialog_search_playlist_picker, null, false);
+                com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                        new com.google.android.material.bottomsheet.BottomSheetDialog(requireContext());
+                dialog.setContentView(dialogView);
+                LinearLayout container = dialogView.findViewById(R.id.layoutPlaylistOptions);
+                View cancelView = dialogView.findViewById(R.id.tvSearchPlaylistCancel);
+                for (com.ptithcm.waveapp.model.Playlist playlist : playlists) {
+                    TextView optionView = new TextView(requireContext());
+                    optionView.setLayoutParams(new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT, dpToPx(50)));
+                    optionView.setGravity(android.view.Gravity.CENTER_VERTICAL);
+                    optionView.setPadding(dpToPx(24), 0, dpToPx(24), 0);
+                    optionView.setText(playlist.getName());
+                    optionView.setTextColor(requireContext().getColor(R.color.white));
+                    optionView.setTextSize(16);
+                    optionView.setOnClickListener(v -> {
+                        dialog.dismiss();
+                        new Thread(() -> {
+                            try {
+                                playlistService.addSong(playlist.getId(), song.getId(), userId);
+                                if (getActivity() == null) return;
+                                getActivity().runOnUiThread(() ->
+                                        Toast.makeText(getContext(), "Đã thêm vào playlist", Toast.LENGTH_SHORT).show());
+                            } catch (Exception e) {
+                                if (getActivity() == null) return;
+                                getActivity().runOnUiThread(() ->
+                                        Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_SHORT).show());
+                            }
+                        }).start();
+                    });
+                    container.addView(optionView);
+                }
+                cancelView.setOnClickListener(v -> dialog.dismiss());
+                dialog.show();
+            });
+        }).start();
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
     private void updateFilterUI(TextView selected) {
@@ -409,37 +533,58 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    private void setupChartSection(List<Song> songs) {
+        topChartSongs.clear();
+        topChartSongs.addAll(songs);
+        chartsExpanded = false;
+
+        if (btnChartToggle != null) {
+            btnChartToggle.setOnClickListener(v -> {
+                boolean wasExpanded = chartsExpanded;
+                chartsExpanded = !chartsExpanded;
+                displaySongs(topChartSongs, chartContainer);
+                if (wasExpanded && !chartsExpanded) {
+                    focusChartSectionTop();
+                }
+            });
+        }
+
+        displaySongs(topChartSongs, chartContainer);
+    }
+
     private void displaySongs(List<Song> songs, LinearLayout container) {
         container.removeAllViews();
-
-        int[] colors = {
-                0xFFE94435,
-                0xFF8E24AA,
-                0xFF2196F3,
-                0xFF4CAF50
-        };
-
-        int index = 0;
-
-        for (Song song : songs) {
-            View item = LayoutInflater.from(getContext())
-                    .inflate(R.layout.item_chart, container, false);
-
-            TextView tvTitle = item.findViewById(R.id.tvChartTitle);
-            TextView tvDesc = item.findViewById(R.id.tvChartDesc);
-
-            com.google.android.material.card.MaterialCardView card =
-                    item.findViewById(R.id.cardChart);
-
-            tvTitle.setText(song.getName().toUpperCase());
-
-            if (song.getArtist() != null) {
-                tvDesc.setText("Bởi " + song.getArtist().getName());
+        if (songs == null || songs.isEmpty()) {
+            if (btnChartToggle != null) {
+                btnChartToggle.setVisibility(View.GONE);
             }
+            return;
+        }
 
-            card.setCardBackgroundColor(colors[index % colors.length]);
+        int visibleCount = chartsExpanded ? Math.min(10, songs.size()) : Math.min(5, songs.size());
 
-            index++;
+        for (int index = 0; index < visibleCount; index++) {
+            Song song = songs.get(index);
+            View item = LayoutInflater.from(getContext())
+                    .inflate(R.layout.item_home_chart_song, container, false);
+
+            TextView tvIndex = item.findViewById(R.id.tvChartIndex);
+            TextView tvTitle = item.findViewById(R.id.tvChartSongTitle);
+            TextView tvArtist = item.findViewById(R.id.tvChartSongArtist);
+            TextView tvPlays = item.findViewById(R.id.tvChartSongPlays);
+            ImageView imgSong = item.findViewById(R.id.imgChartSong);
+
+            tvIndex.setText(String.valueOf(index + 1));
+            tvTitle.setText(song.getName());
+            tvArtist.setText(song.getArtist() != null ? song.getArtist().getName() : "");
+            tvPlays.setText(formatPlayCount(song.getPlayCount()) + " lượt nghe");
+
+            Glide.with(this)
+                    .load(song.getImage())
+                    .placeholder(R.drawable.ic_logo)
+                    .error(R.drawable.ic_logo)
+                    .centerCrop()
+                    .into(imgSong);
 
             item.setOnClickListener(v -> {
                 Intent intent = new Intent(getActivity(), MusicPlayerActivity.class);
@@ -450,10 +595,23 @@ public class HomeFragment extends Fragment {
             });
 
             container.addView(item);
-
-            if (index >= 10) {
-                break;
-            }
         }
+
+        if (btnChartToggle != null) {
+            boolean canExpand = songs.size() > 5;
+            btnChartToggle.setVisibility(canExpand ? View.VISIBLE : View.GONE);
+            btnChartToggle.setText(chartsExpanded ? "Thu gọn" : "Xem thêm");
+        }
+    }
+
+    private String formatPlayCount(long playCount) {
+        return NumberFormat.getNumberInstance(new Locale("vi", "VN")).format(playCount);
+    }
+
+    private void focusChartSectionTop() {
+        if (homeScrollView == null || chartSectionCard == null) {
+            return;
+        }
+        homeScrollView.post(() -> homeScrollView.smoothScrollTo(0, chartSectionCard.getTop()));
     }
 }

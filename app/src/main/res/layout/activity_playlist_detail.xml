@@ -8,7 +8,7 @@
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/app_bar"
         android:layout_width="match_parent"
-        android:layout_height="280dp"
+        android:layout_height="248dp"
         android:background="#121212"
         app:elevation="0dp">
 
@@ -20,40 +20,28 @@
             app:titleEnabled="false">
 
             <FrameLayout
-                android:layout_width="170dp"
-                android:layout_height="170dp"
+                android:layout_width="196dp"
+                android:layout_height="196dp"
                 android:layout_gravity="center_horizontal|top"
-                android:layout_marginTop="56dp"
+                android:layout_marginTop="36dp"
                 app:layout_collapseMode="parallax">
 
-                <ImageView
-                    android:id="@+id/img_playlist_cover"
-                    android:layout_width="160dp"
-                    android:layout_height="160dp"
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="188dp"
+                    android:layout_height="188dp"
                     android:layout_gravity="center"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/ic_logo" />
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="#252525"
+                    app:strokeWidth="1dp">
 
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
-                    android:id="@+id/btn_change_playlist_image"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_gravity="bottom|end"
-                    android:layout_marginEnd="0dp"
-                    android:layout_marginBottom="0dp"
-                    android:elevation="10dp"
-                    android:translationZ="10dp"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_edit"
-                    app:backgroundTint="#1DB954"
-                    app:borderWidth="0dp"
-                    app:elevation="10dp"
-                    app:fabCustomSize="40dp"
-                    app:maxImageSize="22dp"
-                    app:pressedTranslationZ="12dp"
-                    app:rippleColor="#1DB954"
-                    app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full"
-                    app:tint="#FFFFFF" />
+                    <ImageView
+                        android:id="@+id/img_playlist_cover"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_logo" />
+                </com.google.android.material.card.MaterialCardView>
 
             </FrameLayout>
 
@@ -108,8 +96,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="16dp"
-                android:paddingTop="8dp">
+                android:paddingHorizontal="20dp"
+                android:paddingTop="6dp">
+
+                <TextView
+                    android:id="@+id/tv_playlist_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="ALBUM"
+                    android:textAllCaps="true"
+                    android:textColor="#B3B3B3"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/tv_playlist_name"
@@ -117,7 +115,17 @@
                     android:layout_height="wrap_content"
                     android:text="Playlist"
                     android:textColor="#FFFFFF"
-                    android:textSize="24sp"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_playlist_subtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Nghệ sĩ"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -136,16 +144,16 @@
                 android:id="@+id/layout_actions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="10dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
-                android:paddingHorizontal="16dp">
+                android:paddingHorizontal="20dp">
 
                 <!-- Add Song -->
                 <ImageButton
                     android:id="@+id/btn_add_song"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_add"
                     app:tint="#B3B3B3" />
@@ -153,10 +161,12 @@
                 <!-- Like Album -->
                 <ImageButton
                     android:id="@+id/btn_like_album"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_marginStart="10dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="6dp"
+                    android:scaleType="centerInside"
                     android:src="@drawable/ic_heart_outline"
                     android:visibility="gone"
                     app:tint="#B3B3B3" />
@@ -164,9 +174,9 @@
                 <!-- Edit -->
                 <ImageButton
                     android:id="@+id/btn_edit_playlist"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="10dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_edit"
                     app:tint="#B3B3B3" />
@@ -174,9 +184,9 @@
                 <!-- Delete -->
                 <ImageButton
                     android:id="@+id/btn_more_options"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="10dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_delete"
                     app:tint="#FF5252" />
@@ -189,42 +199,58 @@
                 <!-- Shuffle -->
                 <ImageButton
                     android:id="@+id/btn_shuffle"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:src="@drawable/ic_shuffle"
-                    app:tint="#B3B3B3" />
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="@string/shuffle"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/shuffle"
+                    app:tint="#1ED760" />
 
                 <!-- Play -->
-                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                <ImageButton
                     android:id="@+id/fab_play"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:src="@drawable/ic_play_arrow"
-                    app:backgroundTint="#1DB954"
-                    app:elevation="0dp"
+                    android:layout_width="52dp"
+                    android:layout_height="52dp"
+                    android:layout_marginStart="20dp"
+                    android:background="@drawable/bg_play_circle"
+                    android:contentDescription="@string/play"
+                    android:padding="2dp"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/playmusic"
                     app:tint="#000000" />
 
             </LinearLayout>
 
+            <TextView
+                android:id="@+id/tv_song_section_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:paddingHorizontal="20dp"
+                android:text="Danh sách bài hát"
+                android:textColor="#FFFFFF"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:paddingHorizontal="16dp">
+                android:layout_marginTop="10dp"
+                android:paddingHorizontal="20dp">
 
                 <EditText
                     android:id="@+id/et_search_songs"
                     android:layout_width="match_parent"
-                    android:layout_height="40dp"
+                    android:layout_height="46dp"
                     android:background="@drawable/bg_search_sort"
                     android:drawableStart="@drawable/ic_search"
-                    android:drawablePadding="8dp"
+                    android:drawablePadding="10dp"
                     android:hint="Tìm trong playlist"
                     android:imeOptions="actionSearch"
                     android:inputType="text"
-                    android:paddingStart="12dp"
+                    android:paddingStart="14dp"
                     android:textColor="@color/white"
                     android:textColorHint="@color/gray_text"
                     android:textSize="14sp" />
@@ -234,9 +260,10 @@
                 android:id="@+id/rv_playlist_songs"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:clipToPadding="false"
                 android:nestedScrollingEnabled="false"
+                android:paddingHorizontal="4dp"
                 android:paddingBottom="80dp" />
 
         </LinearLayout>

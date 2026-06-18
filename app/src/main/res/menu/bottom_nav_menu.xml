@@ -19,6 +19,6 @@
     <item
         android:id="@+id/nav_add_playlist"
         android:icon="@drawable/ic_add"
-        android:title="Tạo Playlist" />
+        android:title="Playlist" />
 
 </menu>

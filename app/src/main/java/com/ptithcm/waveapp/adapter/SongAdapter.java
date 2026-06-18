@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewGroup.MarginLayoutParams;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -41,6 +42,7 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
     private List<Song> songs;
     private ActionIconMode actionIconMode = ActionIconMode.ADD;
+    private boolean showIndex = true;
 
     private OnSongClickListener onSongClick;
     private OnLikeClickListener onLikeClick;
@@ -56,6 +58,11 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
 
     public void setActionIconMode(ActionIconMode mode) {
         this.actionIconMode = mode != null ? mode : ActionIconMode.ADD;
+        notifyDataSetChanged();
+    }
+
+    public void setShowIndex(boolean showIndex) {
+        this.showIndex = showIndex;
         notifyDataSetChanged();
     }
 
@@ -107,7 +114,17 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
         Context context = holder.itemView.getContext();
 
         if (holder.tvIndex != null) {
-            holder.tvIndex.setText(String.valueOf(position + 1));
+            holder.tvIndex.setVisibility(showIndex ? View.VISIBLE : View.GONE);
+            holder.tvIndex.setText(showIndex ? String.valueOf(position + 1) : "");
+        }
+
+        if (holder.imgSong != null) {
+            ViewGroup.LayoutParams params = holder.imgSong.getLayoutParams();
+            if (params instanceof MarginLayoutParams) {
+                MarginLayoutParams marginParams = (MarginLayoutParams) params;
+                marginParams.setMarginStart(showIndex ? dpToPx(context, 12) : 0);
+                holder.imgSong.setLayoutParams(marginParams);
+            }
         }
 
         if (holder.tvName != null) {
@@ -241,5 +258,9 @@ public class SongAdapter extends RecyclerView.Adapter<SongAdapter.SongViewHolder
                 btnMore = itemView.findViewById(R.id.btn_more);
             }
         }
+    }
+
+    private int dpToPx(Context context, int dp) {
+        return Math.round(dp * context.getResources().getDisplayMetrics().density);
     }
 }

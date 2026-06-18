@@ -6,13 +6,10 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,6 +23,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.android.material.imageview.ShapeableImageView;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.ptithcm.waveapp.adapter.AlbumAdapter;
 import com.ptithcm.waveapp.adapter.ArtistAdapter;
 import com.ptithcm.waveapp.adapter.SongAdapter;
@@ -45,6 +43,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class LibraryFragment extends Fragment {
+    private static final int ALBUM_GRID_SPAN_COUNT = 3;
 
     private enum Tab { SONGS, ARTISTS, ALBUMS }
     private enum SortMode { DEFAULT, NAME_ASC, NAME_DESC }
@@ -63,12 +62,17 @@ public class LibraryFragment extends Fragment {
     private ArtistAdapter artistAdapter;
     private AlbumAdapter albumAdapter;
     private ShapeableImageView imgLibraryProfile;
+    private View layoutSearchLibrary;
+    private View layoutLibrarySort;
     private ImageButton btnLibrarySort;
     private ImageButton btnLibraryLayout;
+    private ImageButton btnLibrarySearch;
+    private ImageButton btnLibraryAdd;
     
     private EditText etSearch;
     private TextView emptyTextView;
     private TextView tabSongs, tabArtists, tabAlbums;
+    private TextView tvLibrarySortLabel;
 
     private List<Song> allSongs = new ArrayList<>();
     private List<Artist> allArtists = new ArrayList<>();
@@ -105,6 +109,8 @@ public class LibraryFragment extends Fragment {
 
     private void initViews(View view) {
         recyclerView = view.findViewById(R.id.recyclerViewLibrary);
+        layoutSearchLibrary = view.findViewById(R.id.layoutSearchLibrary);
+        layoutLibrarySort = view.findViewById(R.id.layoutLibrarySort);
         etSearch = view.findViewById(R.id.etSearchLibrary);
         emptyTextView = view.findViewById(R.id.emptyTextView);
         tabSongs = view.findViewById(R.id.tabSongs);
@@ -113,12 +119,16 @@ public class LibraryFragment extends Fragment {
         imgLibraryProfile = view.findViewById(R.id.imgLibraryProfile);
         btnLibrarySort = view.findViewById(R.id.btnLibrarySort);
         btnLibraryLayout = view.findViewById(R.id.btnLibraryLayout);
+        btnLibrarySearch = view.findViewById(R.id.btnLibrarySearch);
+        btnLibraryAdd = view.findViewById(R.id.btnLibraryAdd);
+        tvLibrarySortLabel = view.findViewById(R.id.tvLibrarySortLabel);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
-        albumGridSpacingDecoration = new GridSpacingItemDecoration(2, dpToPx(12));
+        albumGridSpacingDecoration = new GridSpacingItemDecoration(ALBUM_GRID_SPAN_COUNT, dpToPx(12));
 
         songAdapter = new SongAdapter();
         songAdapter.setActionIconMode(SongAdapter.ActionIconMode.MORE);
+        songAdapter.setShowIndex(false);
         artistAdapter = new ArtistAdapter();
         artistAdapter.setLayoutMode(ArtistAdapter.LayoutMode.LIST);
         albumAdapter = new AlbumAdapter();
@@ -126,6 +136,7 @@ public class LibraryFragment extends Fragment {
         setupAdapterListeners();
         reloadProfileAvatar();
         updateLayoutButtonState();
+        updateSortLabel();
     }
 
     private void setupAdapterListeners() {
@@ -179,8 +190,21 @@ public class LibraryFragment extends Fragment {
             imgLibraryProfile.setOnClickListener(v -> showProfileDialog());
         }
 
+        if (btnLibrarySearch != null) {
+            btnLibrarySearch.setOnClickListener(v -> toggleSearchBar());
+        }
+
+        if (btnLibraryAdd != null) {
+            btnLibraryAdd.setOnClickListener(v ->
+                    startActivity(new Intent(getActivity(), MyPlaylistsActivity.class)));
+        }
+
         if (btnLibrarySort != null) {
             btnLibrarySort.setOnClickListener(this::showSortMenu);
+        }
+
+        if (layoutLibrarySort != null) {
+            layoutLibrarySort.setOnClickListener(this::showSortMenu);
         }
 
         if (btnLibraryLayout != null) {
@@ -195,6 +219,7 @@ public class LibraryFragment extends Fragment {
         etSearch.setText(""); // Reset keyword
         updateTabUI();
         updateLayoutButtonState();
+        updateSortLabel();
         loadData();
     }
 
@@ -220,35 +245,84 @@ public class LibraryFragment extends Fragment {
     }
 
     private void showSortMenu(View anchor) {
-        PopupMenu popupMenu = new PopupMenu(requireContext(), anchor);
-        Menu menu = popupMenu.getMenu();
-        menu.add(0, 1, 0, "Mặc định");
-        menu.add(0, 2, 1, "Tên A-Z");
-        menu.add(0, 3, 2, "Tên Z-A");
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_library_sort, null, false);
 
-        popupMenu.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == 1) {
-                currentSortMode = SortMode.DEFAULT;
-            } else if (item.getItemId() == 2) {
-                currentSortMode = SortMode.NAME_ASC;
-            } else if (item.getItemId() == 3) {
-                currentSortMode = SortMode.NAME_DESC;
-            }
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        dialog.setContentView(dialogView);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setDimAmount(0.55f);
+        }
+
+        TextView tvSortDefault = dialogView.findViewById(R.id.tvSortDefault);
+        TextView tvSortNameAsc = dialogView.findViewById(R.id.tvSortNameAsc);
+        TextView tvSortNameDesc = dialogView.findViewById(R.id.tvSortNameDesc);
+        View optionSortDefault = dialogView.findViewById(R.id.optionSortDefault);
+        View optionSortNameAsc = dialogView.findViewById(R.id.optionSortNameAsc);
+        View optionSortNameDesc = dialogView.findViewById(R.id.optionSortNameDesc);
+        View cancelView = dialogView.findViewById(R.id.tvLibrarySortCancel);
+        View checkDefault = dialogView.findViewById(R.id.ivSortDefaultCheck);
+        View checkNameAsc = dialogView.findViewById(R.id.ivSortNameAscCheck);
+        View checkNameDesc = dialogView.findViewById(R.id.ivSortNameDescCheck);
+
+        int selectedColor = requireContext().getColor(R.color.spotify_green);
+        int normalColor = requireContext().getColor(R.color.white);
+
+        tvSortDefault.setTextColor(currentSortMode == SortMode.DEFAULT ? selectedColor : normalColor);
+        tvSortNameAsc.setTextColor(currentSortMode == SortMode.NAME_ASC ? selectedColor : normalColor);
+        tvSortNameDesc.setTextColor(currentSortMode == SortMode.NAME_DESC ? selectedColor : normalColor);
+        checkDefault.setVisibility(currentSortMode == SortMode.DEFAULT ? View.VISIBLE : View.GONE);
+        checkNameAsc.setVisibility(currentSortMode == SortMode.NAME_ASC ? View.VISIBLE : View.GONE);
+        checkNameDesc.setVisibility(currentSortMode == SortMode.NAME_DESC ? View.VISIBLE : View.GONE);
+
+        optionSortDefault.setOnClickListener(v -> {
+            currentSortMode = SortMode.DEFAULT;
+            updateSortLabel();
             applyCurrentState();
-            return true;
+            dialog.dismiss();
         });
 
-        popupMenu.show();
+        optionSortNameAsc.setOnClickListener(v -> {
+            currentSortMode = SortMode.NAME_ASC;
+            updateSortLabel();
+            applyCurrentState();
+            dialog.dismiss();
+        });
+
+        optionSortNameDesc.setOnClickListener(v -> {
+            currentSortMode = SortMode.NAME_DESC;
+            updateSortLabel();
+            applyCurrentState();
+            dialog.dismiss();
+        });
+
+        cancelView.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
+    }
+
+    private void toggleSearchBar() {
+        if (layoutSearchLibrary == null) return;
+
+        boolean shouldShow = layoutSearchLibrary.getVisibility() != View.VISIBLE;
+        layoutSearchLibrary.setVisibility(shouldShow ? View.VISIBLE : View.GONE);
+
+        if (etSearch == null) return;
+
+        if (shouldShow) {
+            etSearch.requestFocus();
+        } else {
+            etSearch.setText("");
+            etSearch.clearFocus();
+        }
     }
 
     private void toggleLayoutMode() {
-        if (currentTab == Tab.SONGS) {
+        if (currentTab == Tab.SONGS || currentTab == Tab.ARTISTS) {
             return;
         }
 
-        if (currentTab == Tab.ARTISTS) {
-            artistGridMode = !artistGridMode;
-        } else if (currentTab == Tab.ALBUMS) {
+        if (currentTab == Tab.ALBUMS) {
             albumGridMode = !albumGridMode;
         }
 
@@ -259,14 +333,26 @@ public class LibraryFragment extends Fragment {
     private void updateLayoutButtonState() {
         if (btnLibraryLayout == null) return;
 
-        if (currentTab == Tab.SONGS) {
+        if (currentTab == Tab.SONGS || currentTab == Tab.ARTISTS) {
             btnLibraryLayout.setVisibility(View.GONE);
             return;
         }
 
         btnLibraryLayout.setVisibility(View.VISIBLE);
-        boolean showingGrid = currentTab == Tab.ARTISTS ? artistGridMode : albumGridMode;
+        boolean showingGrid = albumGridMode;
         btnLibraryLayout.setImageResource(showingGrid ? R.drawable.ic_list_view : R.drawable.ic_grid_view);
+    }
+
+    private void updateSortLabel() {
+        if (tvLibrarySortLabel == null) return;
+
+        if (currentSortMode == SortMode.NAME_ASC) {
+            tvLibrarySortLabel.setText("Tên A-Z");
+        } else if (currentSortMode == SortMode.NAME_DESC) {
+            tvLibrarySortLabel.setText("Tên Z-A");
+        } else {
+            tvLibrarySortLabel.setText("Gần đây");
+        }
     }
 
     private void reloadProfileAvatar() {
@@ -344,39 +430,41 @@ public class LibraryFragment extends Fragment {
     }
 
     private void showSongActions(Song song, View anchor) {
-        PopupMenu popupMenu = new PopupMenu(requireContext(), anchor);
-        popupMenu.inflate(R.menu.library_song_actions_menu);
+        View dialogView = LayoutInflater.from(requireContext())
+                .inflate(R.layout.dialog_library_song_actions, null, false);
 
-        if (song.getArtist() == null) {
-            popupMenu.getMenu().findItem(R.id.action_view_artist).setVisible(false);
+        BottomSheetDialog dialog = new BottomSheetDialog(requireContext());
+        dialog.setContentView(dialogView);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setDimAmount(0.55f);
         }
 
-        if (song.getAlbum() == null) {
-            popupMenu.getMenu().findItem(R.id.action_view_album).setVisible(false);
-        }
+        View optionRemoveFavorite = dialogView.findViewById(R.id.optionRemoveFavorite);
+        View optionViewArtist = dialogView.findViewById(R.id.optionViewArtist);
+        View optionViewAlbum = dialogView.findViewById(R.id.optionViewAlbum);
+        View cancelView = dialogView.findViewById(R.id.tvLibrarySongActionsCancel);
 
-        popupMenu.setOnMenuItemClickListener(item -> {
-            int itemId = item.getItemId();
+        optionViewArtist.setVisibility(song.getArtist() != null ? View.VISIBLE : View.GONE);
+        optionViewAlbum.setVisibility(song.getAlbum() != null ? View.VISIBLE : View.GONE);
 
-            if (itemId == R.id.action_remove_favorite) {
-                removeLikedSong(song);
-                return true;
-            }
-
-            if (itemId == R.id.action_view_artist) {
-                openArtistDetail(song);
-                return true;
-            }
-
-            if (itemId == R.id.action_view_album) {
-                openAlbumDetail(song);
-                return true;
-            }
-
-            return false;
+        optionRemoveFavorite.setOnClickListener(v -> {
+            dialog.dismiss();
+            removeLikedSong(song);
         });
 
-        popupMenu.show();
+        optionViewArtist.setOnClickListener(v -> {
+            dialog.dismiss();
+            openArtistDetail(song);
+        });
+
+        optionViewAlbum.setOnClickListener(v -> {
+            dialog.dismiss();
+            openAlbumDetail(song);
+        });
+
+        cancelView.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     private void removeLikedSong(Song song) {
@@ -476,7 +564,7 @@ public class LibraryFragment extends Fragment {
                 configureRecyclerDecoration(albumGridMode);
                 albumAdapter.setLayoutMode(albumGridMode ? AlbumAdapter.LayoutMode.GRID : AlbumAdapter.LayoutMode.LIST);
                 recyclerView.setLayoutManager(albumGridMode
-                        ? new GridLayoutManager(getContext(), 2)
+                        ? new GridLayoutManager(getContext(), ALBUM_GRID_SPAN_COUNT)
                         : new LinearLayoutManager(getContext()));
                 recyclerView.setAdapter(albumAdapter);
                 List<Album> filteredAlbums = allAlbums.stream()

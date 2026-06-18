@@ -45,6 +45,11 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
     private final Random random = new Random();
     private boolean shuffleEnabled = false;
     private int currentIndex = -1;
+    private final Runnable miniPlayerStateSyncRunnable = this::updateMiniPlayerFromService;
+    private final MusicPlayerService.NavigationCallback miniNavigationCallback = new MusicPlayerService.NavigationCallback() {
+        @Override public void onSkipToPrevious() { runOnUiThread(() -> playMiniSongByDirection(-1)); }
+        @Override public void onSkipToNext()     { runOnUiThread(() -> playMiniSongByDirection(1)); }
+    };
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -53,10 +58,7 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
             musicService = binder.getService();
             serviceBound = true;
             musicService.setPlaybackCallback(BaseMiniPlayerActivity.this);
-            musicService.setNavigationCallback(new MusicPlayerService.NavigationCallback() {
-                @Override public void onSkipToPrevious() { runOnUiThread(() -> playMiniSongByDirection(-1)); }
-                @Override public void onSkipToNext()     { runOnUiThread(() -> playMiniSongByDirection(1)); }
-            });
+            musicService.setNavigationCallback(miniNavigationCallback);
             updateMiniPlayerFromService();
             loadPlaybackQueue(musicService.getCurrentSongId());
         }
@@ -113,8 +115,8 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
     @Override
     protected void onStop() {
         if (musicService != null) {
-            musicService.setPlaybackCallback(null);
-            musicService.setNavigationCallback(null);
+            musicService.clearPlaybackCallbackIfMatches(this);
+            musicService.clearNavigationCallbackIfMatches(miniNavigationCallback);
         }
         if (serviceBound) {
             unbindService(serviceConnection);
@@ -245,7 +247,7 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
         layoutMiniPlayer.setVisibility(View.VISIBLE);
         tvMiniSongTitle.setText(song.getName());
         tvMiniArtistName.setText(artistName);
-        updateMiniPlayButtonUI();
+        if (btnMiniPlay != null) btnMiniPlay.setImageResource(R.drawable.pausemusic);
         if (ivMiniAlbumArt != null) {
             Glide.with(this)
                     .load(song.getImage())
@@ -274,6 +276,7 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
         if (musicService == null || !musicService.hasPlayer()) return;
         musicService.togglePlayback();
         updateMiniPlayButtonUI();
+        scheduleMiniPlayerStateSync();
     }
 
     private void updateMiniShuffleButtonUI() {
@@ -284,33 +287,53 @@ public abstract class BaseMiniPlayerActivity extends AppCompatActivity implement
 
     private void updateMiniPlayButtonUI() {
         if (btnMiniPlay == null) return;
-        boolean playing = musicService != null && musicService.isPlaying();
-        btnMiniPlay.setImageResource(playing ? R.drawable.pausemusic : R.drawable.playmusic);
+        boolean playingOrLoading = musicService != null &&
+                (musicService.isPlaying() || musicService.isPreparing());
+        btnMiniPlay.setImageResource(playingOrLoading ? R.drawable.pausemusic : R.drawable.playmusic);
     }
 
     private int dpToPx(int dp) {
         return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 
+    private void scheduleMiniPlayerStateSync() {
+        if (layoutMiniPlayer == null) return;
+
+        layoutMiniPlayer.removeCallbacks(miniPlayerStateSyncRunnable);
+        layoutMiniPlayer.postDelayed(miniPlayerStateSyncRunnable, 150);
+        layoutMiniPlayer.postDelayed(miniPlayerStateSyncRunnable, 450);
+        layoutMiniPlayer.postDelayed(miniPlayerStateSyncRunnable, 900);
+    }
+
     @Override
     public void onPrepared(int durationMs) {
-        if (!isFinishing() && !isDestroyed()) {
-            updateMiniPlayerFromService();
-        }
+        runOnUiThread(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                updateMiniPlayerFromService();
+                updateMiniPlayButtonUI();
+                scheduleMiniPlayerStateSync();
+            }
+        });
     }
 
     @Override
     public void onCompletion() {
-        if (!isFinishing() && !isDestroyed()) {
-            playMiniSongByDirection(1);
-        }
+        runOnUiThread(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                playMiniSongByDirection(1);
+            }
+        });
     }
 
     @Override
     public void onPlaybackStateChanged(boolean isPlaying) {
-        if (!isFinishing() && !isDestroyed()) {
-            updateMiniPlayerFromService();
-        }
+        runOnUiThread(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                updateMiniPlayerFromService();
+                updateMiniPlayButtonUI();
+                scheduleMiniPlayerStateSync();
+            }
+        });
     }
 
     @Override

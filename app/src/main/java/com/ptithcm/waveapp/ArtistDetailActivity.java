@@ -2,18 +2,21 @@ package com.ptithcm.waveapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.ptithcm.waveapp.adapter.SongAdapter;
 import com.ptithcm.waveapp.model.Artist;
 import com.ptithcm.waveapp.model.LikedSong;
@@ -98,11 +101,11 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
 
     private void setupRecyclerView() {
         songAdapter = new SongAdapter();
+        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.MORE);
         rvPopularSongs.setLayoutManager(new LinearLayoutManager(this));
         rvPopularSongs.setAdapter(songAdapter);
 
         songAdapter.setOnSongClickListener(this::openMusicPlayer);
-        songAdapter.setOnLikeClickListener(this::toggleLikeSong);
         songAdapter.setOnMoreClickListener((song, position, anchor) -> showSongOptions(song, position));
     }
 
@@ -277,22 +280,27 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
     }
 
     private void showSongOptions(Song song, int position) {
-        String[] options = {"Thêm vào yêu thích", "Thêm vào playlist", "Xóa khỏi danh sách yêu thích"};
-        new AlertDialog.Builder(this)
-                .setTitle(song.getName())
-                .setItems(options, (dialog, which) -> {
-                    if (which == 0) {
-                        addSongToFavorites(song, position);
-                    } else {
-                        if (which == 1) {
-                            showAddToPlaylistDialog(song);
-                        } else {
-                            removeSongFromFavorites(song, position);
-                        }
-                    }
-                })
-                .setNegativeButton("Đóng", null)
-                .show();
+        View dialogView = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_search_song_actions, null, false);
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        dialog.setContentView(dialogView);
+
+        TextView tvSongName = dialogView.findViewById(R.id.tvSearchSongActionTitle);
+        View optionFavorite = dialogView.findViewById(R.id.optionAddSongFavorite);
+        View optionPlaylist = dialogView.findViewById(R.id.optionAddSongPlaylist);
+        View optionCancel = dialogView.findViewById(R.id.tvSearchSongActionCancel);
+
+        tvSongName.setText(song.getName());
+        optionFavorite.setOnClickListener(v -> {
+            dialog.dismiss();
+            addSongToFavorites(song, position);
+        });
+        optionPlaylist.setOnClickListener(v -> {
+            dialog.dismiss();
+            showAddToPlaylistDialog(song);
+        });
+        optionCancel.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     private void addSongToFavorites(Song song, int position) {
@@ -368,16 +376,35 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
                     return;
                 }
 
-                String[] playlistNames = new String[playlists.size()];
-                for (int i = 0; i < playlists.size(); i++) {
-                    playlistNames[i] = playlists.get(i).getName();
+                View dialogView = LayoutInflater.from(this)
+                        .inflate(R.layout.dialog_search_playlist_picker, null, false);
+
+                BottomSheetDialog dialog = new BottomSheetDialog(this);
+                dialog.setContentView(dialogView);
+
+                LinearLayout container = dialogView.findViewById(R.id.layoutPlaylistOptions);
+                View cancelView = dialogView.findViewById(R.id.tvSearchPlaylistCancel);
+
+                for (com.ptithcm.waveapp.model.Playlist playlist : playlists) {
+                    TextView optionView = new TextView(this);
+                    optionView.setLayoutParams(new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            dpToPx(50)
+                    ));
+                    optionView.setGravity(android.view.Gravity.CENTER_VERTICAL);
+                    optionView.setPadding(dpToPx(24), 0, dpToPx(24), 0);
+                    optionView.setText(playlist.getName());
+                    optionView.setTextColor(getColor(R.color.white));
+                    optionView.setTextSize(18);
+                    optionView.setOnClickListener(v -> {
+                        dialog.dismiss();
+                        addSongToPlaylist(playlist.getId(), song);
+                    });
+                    container.addView(optionView);
                 }
 
-                new AlertDialog.Builder(this)
-                        .setTitle("Chọn playlist")
-                        .setItems(playlistNames, (dialog, which) -> addSongToPlaylist(playlists.get(which).getId(), song))
-                        .setNegativeButton("Đóng", null)
-                        .show();
+                cancelView.setOnClickListener(v -> dialog.dismiss());
+                dialog.show();
             });
         }).start();
     }
@@ -394,5 +421,9 @@ public class ArtistDetailActivity extends BaseMiniPlayerActivity {
                 runOnUiThread(() -> Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         }).start();
+    }
+
+    private int dpToPx(int dp) {
+        return Math.round(dp * getResources().getDisplayMetrics().density);
     }
 }

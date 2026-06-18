@@ -118,8 +118,20 @@ public class MusicPlayerService extends Service {
         this.callback = callback;
     }
 
+    public void clearPlaybackCallbackIfMatches(PlaybackCallback callback) {
+        if (this.callback == callback) {
+            this.callback = null;
+        }
+    }
+
     public void setNavigationCallback(NavigationCallback callback) {
         this.navigationCallback = callback;
+    }
+
+    public void clearNavigationCallbackIfMatches(NavigationCallback callback) {
+        if (this.navigationCallback == callback) {
+            this.navigationCallback = null;
+        }
     }
 
     public void playNewSong(String url, String title, String artist) {
@@ -282,6 +294,10 @@ public class MusicPlayerService extends Service {
 
     public boolean hasPlayer() {
         return mediaPlayer != null;
+    }
+
+    public boolean isPreparing() {
+        return mediaPlayer != null && !prepared;
     }
 
     public String getCurrentSongId() {

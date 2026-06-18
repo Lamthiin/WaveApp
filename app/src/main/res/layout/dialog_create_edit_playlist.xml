@@ -3,18 +3,62 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="#282828"
+    android:background="@drawable/bg_admin_dialog"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="22dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <FrameLayout
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_library_icon_button">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_playlist"
+                app:tint="#1ED760" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tv_dialog_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tạo playlist mới"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Đặt tên ngắn gọn để bạn dễ tìm lại sau."
+                android:textColor="#9D9D9D"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </LinearLayout>
 
     <TextView
-        android:id="@+id/tv_dialog_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp"
-        android:text="Tạo playlist mới"
+        android:layout_marginTop="20dp"
+        android:text="Tên playlist"
         android:textColor="#FFFFFF"
-        android:textSize="20sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <com.google.android.material.textfield.TextInputLayout
@@ -22,28 +66,36 @@
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Tên playlist"
-        app:boxStrokeColor="#1DB954"
+        android:layout_marginTop="8dp"
+        android:hint="Ví dụ: Chill cuối tuần"
+        app:boxBackgroundColor="#202020"
+        app:boxCornerRadiusBottomEnd="16dp"
+        app:boxCornerRadiusBottomStart="16dp"
+        app:boxCornerRadiusTopEnd="16dp"
+        app:boxCornerRadiusTopStart="16dp"
+        app:boxStrokeColor="#1ED760"
         app:counterEnabled="true"
         app:counterMaxLength="100"
-        app:hintTextColor="#B3B3B3">
+        app:hintTextColor="#8C8C8C">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/et_playlist_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:imeOptions="actionDone"
             android:inputType="textCapSentences"
             android:maxLength="100"
+            android:maxLines="1"
+            android:minHeight="56dp"
             android:textColor="#FFFFFF"
-            android:textColorHint="#535353"
+            android:textColorHint="#707070"
             android:textSize="16sp" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="22dp"
         android:gravity="end"
         android:orientation="horizontal">
 
@@ -53,7 +105,6 @@
             android:layout_width="wrap_content"
             android:layout_height="44dp"
             android:layout_marginEnd="8dp"
-            android:paddingHorizontal="20dp"
             android:text="Hủy"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
@@ -63,14 +114,20 @@
             android:id="@+id/btn_save"
             android:layout_width="wrap_content"
             android:layout_height="44dp"
-            android:paddingHorizontal="20dp"
-            android:text="Lưu"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:text="Tạo playlist"
             android:textAllCaps="false"
             android:textColor="#000000"
             android:textStyle="bold"
-            app:backgroundTint="#1DB954"
-            app:cornerRadius="22dp" />
-
+            app:backgroundTint="#1ED760"
+            app:cornerRadius="22dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconTint="#000000" />
     </LinearLayout>
 
 </LinearLayout>

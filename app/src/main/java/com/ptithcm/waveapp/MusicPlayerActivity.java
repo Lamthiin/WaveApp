@@ -14,8 +14,10 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -48,8 +50,9 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
 
     private ShapeableImageView ivAlbumArt;
     private TextView tvSongTitle, tvArtistName, tvCurrentTime, tvTotalTime, tvHeaderTitle, tvLyricsPreview;
-    private Button btnLyricsDetail;
     private ImageButton btnPlay, btnPrevious, btnNext, btnBack, btnShuffle, btnRepeat, btnTimer, btnQueue, btnAdd, btnOptions;
+    private Button btnLyricsDetail;
+    private ViewGroup layoutLyricsPreview;
     private SeekBar seekBar;
 
     private MusicPlayerService musicService;
@@ -64,12 +67,20 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     private boolean repeatEnabled = false;
     private boolean lyricsExpanded = false;
     private boolean isUserSeeking = false;
+    private boolean shouldAutoPlay = false;
+    private boolean scopedQueueActive = false;
+    private boolean scopedQueueExpanded = false;
 
     private Song currentSong;
     private String songId;
     private final List<Song> playbackQueue = new ArrayList<>();
+    private final List<Song> scopedQueue = new ArrayList<>();
     private final Random random = new Random();
     private int currentIndex = -1;
+    private final MusicPlayerService.NavigationCallback detailNavigationCallback = new MusicPlayerService.NavigationCallback() {
+        @Override public void onSkipToPrevious() { runOnUiThread(() -> playPreviousSong()); }
+        @Override public void onSkipToNext()     { runOnUiThread(() -> playNextSong()); }
+    };
 
     private SongRepository songRepo;
     private LikedSongRepository likedSongRepo;
@@ -81,10 +92,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             MusicPlayerService.LocalBinder binder = (MusicPlayerService.LocalBinder) service;
             musicService = binder.getService();
             musicService.setPlaybackCallback(MusicPlayerActivity.this);
-            musicService.setNavigationCallback(new MusicPlayerService.NavigationCallback() {
-                @Override public void onSkipToPrevious() { runOnUiThread(() -> playPreviousSong()); }
-                @Override public void onSkipToNext()     { runOnUiThread(() -> playNextSong()); }
-            });
+            musicService.setNavigationCallback(detailNavigationCallback);
             serviceBound = true;
             if (!intentHandled) {
                 intentHandled = true;
@@ -144,6 +152,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         tvHeaderTitle = findViewById(R.id.tvHeaderTitle);
         tvLyricsPreview = findViewById(R.id.tvLyricsPreview);
         btnLyricsDetail = findViewById(R.id.btnLyricsDetail);
+        layoutLyricsPreview = findViewById(R.id.layoutLyricsPreview);
 
         btnPlay = findViewById(R.id.btnPlay);
         btnPrevious = findViewById(R.id.btnPrevious);
@@ -164,10 +173,22 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
     }
 
     private void handleIntent() {
+        shouldAutoPlay = getIntent().getBooleanExtra("AUTO_PLAY", false);
+        shuffleEnabled = getIntent().getBooleanExtra("SHUFFLE_ENABLED", false);
+        updateShuffleButtonUI();
+
         List<Song> queue = (List<Song>) getIntent().getSerializableExtra("QUEUE_LIST");
         if (queue != null && !queue.isEmpty()) {
+            scopedQueueActive = true;
+            scopedQueueExpanded = false;
+            scopedQueue.clear();
+            scopedQueue.addAll(queue);
             playbackQueue.clear();
             playbackQueue.addAll(queue);
+        } else {
+            scopedQueueActive = false;
+            scopedQueueExpanded = false;
+            scopedQueue.clear();
         }
 
         songId = getIntent().getStringExtra("SONG_ID");
@@ -183,6 +204,7 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             loadLikedStatus(songId);
             if (playbackQueue.isEmpty()) {
                 loadPlaybackQueue(songId);
+                prepareMusicService(currentSong.getUrl());
             } else {
                 currentIndex = findSongIndex(songId);
                 prepareMusicService(currentSong.getUrl());
@@ -212,13 +234,22 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             runOnUiThread(() -> {
                 updateUI(song);
                 updateLikeButtonUI();
-                loadPlaybackQueue(id);
+                if (playbackQueue.isEmpty()) {
+                    loadPlaybackQueue(id);
+                } else {
+                    currentIndex = findSongIndex(id);
+                }
                 prepareMusicService(song.getUrl());
             });
         }).start();
     }
 
     private void loadPlaybackQueue(String selectedSongId) {
+        if (scopedQueueActive && !playbackQueue.isEmpty()) {
+            currentIndex = findSongIndex(selectedSongId);
+            return;
+        }
+
         new Thread(() -> {
             List<Song> songs = songRepo.findByActiveTrue();
             runOnUiThread(() -> {
@@ -242,12 +273,11 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             return;
         }
         tvSongTitle.setText(song.getName());
+        tvHeaderTitle.setText(song.getName());
         if (song.getArtist() != null) {
             tvArtistName.setText(song.getArtist().getName());
-            tvHeaderTitle.setText(song.getArtist().getName());
         } else {
             tvArtistName.setText("");
-            tvHeaderTitle.setText(getString(R.string.liked_songs));
         }
         tvTotalTime.setText(formatDuration(song.getDuration()));
         updateLyricsPreview(song.getLyrics());
@@ -288,6 +318,9 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
             if (musicService != null) {
                 repeatEnabled = musicService.isRepeatOne();
                 updateRepeatButtonUI();
+                if (shouldAutoPlay && !musicService.isPlaying()) {
+                    musicService.resumePlayback();
+                }
             }
             return;
         }
@@ -414,17 +447,90 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
 
         if (currentIndex < 0) {
             currentIndex = 0;
-        } else if (shuffleEnabled && playbackQueue.size() > 1) {
+        } else {
+            if (shouldExpandQueueBeforeMove(direction)) {
+                expandQueueWithRemainingSongs(() -> continuePlaybackAfterExpansion(direction));
+                return;
+            }
+            currentIndex = resolveNextIndex(direction);
+        }
+
+        playSong(playbackQueue.get(currentIndex));
+    }
+
+    private boolean shouldExpandQueueBeforeMove(int direction) {
+        return direction > 0
+                && scopedQueueActive
+                && !scopedQueueExpanded
+                && !playbackQueue.isEmpty()
+                && currentIndex >= playbackQueue.size() - 1;
+    }
+
+    private int resolveNextIndex(int direction) {
+        if (playbackQueue.isEmpty()) {
+            return -1;
+        }
+
+        if (shuffleEnabled && playbackQueue.size() > 1 && (!scopedQueueActive || scopedQueueExpanded)) {
             int nextIndex;
             do {
                 nextIndex = random.nextInt(playbackQueue.size());
             } while (nextIndex == currentIndex);
+            return nextIndex;
+        }
+
+        return (currentIndex + direction + playbackQueue.size()) % playbackQueue.size();
+    }
+
+    private void expandQueueWithRemainingSongs(Runnable onComplete) {
+        new Thread(() -> {
+            List<Song> activeSongs = songRepo.findByActiveTrue();
+            List<Song> songsToAppend = new ArrayList<>();
+
+            for (Song song : activeSongs) {
+                if (!containsSong(playbackQueue, song.getId())) {
+                    songsToAppend.add(song);
+                }
+            }
+
+            runOnUiThread(() -> {
+                playbackQueue.addAll(songsToAppend);
+                scopedQueueExpanded = true;
+                if (onComplete != null) {
+                    onComplete.run();
+                }
+            });
+        }).start();
+    }
+
+    private void continuePlaybackAfterExpansion(int direction) {
+        if (playbackQueue.isEmpty()) {
+            return;
+        }
+
+        if (direction > 0) {
+            int nextIndex = currentIndex + 1;
+            if (nextIndex >= playbackQueue.size()) {
+                nextIndex = 0;
+            }
             currentIndex = nextIndex;
         } else {
-            currentIndex = (currentIndex + direction + playbackQueue.size()) % playbackQueue.size();
+            currentIndex = resolveNextIndex(direction);
         }
 
         playSong(playbackQueue.get(currentIndex));
+    }
+
+    private boolean containsSong(List<Song> songs, String id) {
+        if (id == null) {
+            return false;
+        }
+        for (Song song : songs) {
+            if (id.equals(song.getId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void playSong(Song song) {
@@ -701,19 +807,50 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
 
     private String getDisplayLyrics(String lyrics) {
         if (lyrics == null || lyrics.trim().isEmpty()) return "Chưa có lời bài hát";
-        return lyrics.trim();
+        return lyrics
+                .replace("\\n", "\n")
+                .replace("\\r", "\r")
+                .trim();
     }
 
     private void toggleLyricsExpanded() {
         if (currentSong == null || !btnLyricsDetail.isEnabled()) return;
+        String fullLyrics = getDisplayLyrics(currentSong.getLyrics());
+        if (!lyricsExpanded && fullLyrics.length() > 220) {
+            showLyricsDialog(fullLyrics);
+            return;
+        }
         setLyricsExpanded(!lyricsExpanded);
     }
 
     private void setLyricsExpanded(boolean expanded) {
         lyricsExpanded = expanded;
-        tvLyricsPreview.setMaxLines(expanded ? Integer.MAX_VALUE : 3);
+        tvLyricsPreview.setMaxLines(expanded ? 8 : 3);
         tvLyricsPreview.setEllipsize(expanded ? null : TextUtils.TruncateAt.END);
         btnLyricsDetail.setText(expanded ? "Thu gọn" : "Xem chi tiết");
+        if (layoutLyricsPreview != null) {
+            layoutLyricsPreview.requestLayout();
+        }
+    }
+
+    private void showLyricsDialog(String lyrics) {
+        ScrollView scrollView = new ScrollView(this);
+        int padding = (int) (20 * getResources().getDisplayMetrics().density);
+        scrollView.setPadding(padding, padding, padding, padding);
+
+        TextView lyricsView = new TextView(this);
+        lyricsView.setText(lyrics);
+        lyricsView.setTextSize(16f);
+        lyricsView.setTextColor(ContextCompat.getColor(this, android.R.color.black));
+        lyricsView.setLineSpacing(0f, 1.2f);
+
+        scrollView.addView(lyricsView);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Lời bài hát")
+                .setView(scrollView)
+                .setPositiveButton("Đóng", null)
+                .show();
     }
 
     private String formatDuration(int seconds) {
@@ -727,8 +864,8 @@ public class MusicPlayerActivity extends AppCompatActivity implements MusicPlaye
         stopSeekBarUpdates();
         cancelSleepTimer();
         if (musicService != null) {
-            musicService.setPlaybackCallback(null);
-            musicService.setNavigationCallback(null);
+            musicService.clearPlaybackCallbackIfMatches(this);
+            musicService.clearNavigationCallbackIfMatches(detailNavigationCallback);
         }
         if (serviceBound) {
             unbindService(serviceConnection);

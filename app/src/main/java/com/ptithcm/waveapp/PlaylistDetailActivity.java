@@ -2,7 +2,6 @@ package com.ptithcm.waveapp;
 
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -10,14 +9,10 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 import com.ptithcm.waveapp.adapter.SongAdapter;
 import com.ptithcm.waveapp.model.Album;
 import com.ptithcm.waveapp.model.Playlist;
@@ -29,6 +24,7 @@ import com.ptithcm.waveapp.util.TokenManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
@@ -37,9 +33,9 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
     private TokenManager tokenManager;
 
     private ImageView imgAlbumArt;
-    private ImageButton btnChangePlaylistImage, btnLikeAlbum;
+    private ImageButton btnLikeAlbum;
 
-    private TextView tvAlbumName, tvSongCount;
+    private TextView tvAlbumName, tvSongCount, tvPlaylistLabel, tvPlaylistSubtitle;
     private EditText etSearchSongs;
     private RecyclerView rvSongs;
     private SongAdapter songAdapter;
@@ -49,12 +45,6 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
     private String currentId;
     private boolean isAlbum = false;
-
-    private final ActivityResultLauncher<String> pickImageLauncher =
-            registerForActivityResult(
-                    new ActivityResultContracts.GetContent(),
-                    this::uploadPlaylistImage
-            );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,11 +63,12 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
     private void initViews() {
         imgAlbumArt = findViewById(R.id.img_playlist_cover);
-        btnChangePlaylistImage = findViewById(R.id.btn_change_playlist_image);
         btnLikeAlbum = findViewById(R.id.btn_like_album);
 
         tvAlbumName = findViewById(R.id.tv_playlist_name);
         tvSongCount = findViewById(R.id.tv_playlist_meta);
+        tvPlaylistLabel = findViewById(R.id.tv_playlist_label);
+        tvPlaylistSubtitle = findViewById(R.id.tv_playlist_subtitle);
 
         etSearchSongs = findViewById(R.id.et_search_songs);
         rvSongs = findViewById(R.id.rv_playlist_songs);
@@ -85,7 +76,7 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
     private void setupRecyclerView() {
         songAdapter = new SongAdapter(filteredList);
-        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.DELETE);
+        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.MORE);
 
         rvSongs.setLayoutManager(new LinearLayoutManager(this));
         rvSongs.setAdapter(songAdapter);
@@ -165,13 +156,18 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
         findViewById(R.id.btn_add_song).setVisibility(android.view.View.GONE);
         findViewById(R.id.btn_edit_playlist).setVisibility(android.view.View.GONE);
         findViewById(R.id.btn_more_options).setVisibility(android.view.View.GONE);
+        findViewById(R.id.tv_song_section_title).setVisibility(android.view.View.VISIBLE);
         if (btnLikeAlbum != null) {
             btnLikeAlbum.setVisibility(android.view.View.VISIBLE);
             updateLikeButtonUI();
         }
 
-        if (btnChangePlaylistImage != null) {
-            btnChangePlaylistImage.setVisibility(android.view.View.GONE);
+        if (tvPlaylistLabel != null) {
+            tvPlaylistLabel.setText("ALBUM");
+        }
+
+        if (etSearchSongs != null) {
+            etSearchSongs.setHint("Tìm trong album");
         }
     }
 
@@ -179,9 +175,19 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
         findViewById(R.id.btn_add_song).setVisibility(android.view.View.VISIBLE);
         findViewById(R.id.btn_edit_playlist).setVisibility(android.view.View.VISIBLE);
         findViewById(R.id.btn_more_options).setVisibility(android.view.View.VISIBLE);
+        findViewById(R.id.tv_song_section_title).setVisibility(android.view.View.VISIBLE);
 
-        if (btnChangePlaylistImage != null) {
-            btnChangePlaylistImage.setVisibility(android.view.View.VISIBLE);
+        songAdapter.setActionIconMode(SongAdapter.ActionIconMode.DELETE);
+        if (tvPlaylistLabel != null) {
+            tvPlaylistLabel.setText("PLAYLIST");
+        }
+
+        if (tvPlaylistSubtitle != null) {
+            tvPlaylistSubtitle.setText("Playlist của bạn");
+        }
+
+        if (etSearchSongs != null) {
+            etSearchSongs.setHint("Tìm trong playlist");
         }
     }
 
@@ -203,56 +209,6 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
         findViewById(R.id.btn_edit_playlist).setOnClickListener(v -> showRenameDialog());
         findViewById(R.id.btn_more_options).setOnClickListener(v -> showDeleteConfirmDialog());
-
-        if (btnChangePlaylistImage != null) {
-            btnChangePlaylistImage.setOnClickListener(v -> {
-                if (!isAlbum) pickImageLauncher.launch("image/*");
-            });
-        }
-    }
-
-    private void uploadPlaylistImage(Uri uri) {
-        if (uri == null || currentId == null || isAlbum) return;
-
-        Toast.makeText(this, "Đang upload ảnh playlist...", Toast.LENGTH_SHORT).show();
-
-        StorageReference ref = FirebaseStorage.getInstance()
-                .getReference()
-                .child("playlists_image/" + currentId + ".jpg");
-
-        ref.putFile(uri)
-                .continueWithTask(task -> {
-                    if (!task.isSuccessful() && task.getException() != null) {
-                        throw task.getException();
-                    }
-
-                    return ref.getDownloadUrl();
-                })
-                .addOnSuccessListener(downloadUri -> {
-                    String imageUrl = downloadUri.toString();
-
-                    try {
-                        playlistService.updatePlaylistImage(
-                                currentId,
-                                tokenManager.getUserId(),
-                                imageUrl
-                        );
-
-                        Glide.with(this)
-                                .load(imageUrl)
-                                .placeholder(R.drawable.ic_logo)
-                                .error(R.drawable.ic_logo)
-                                .into(imgAlbumArt);
-
-                        Toast.makeText(this, "Đã cập nhật ảnh playlist", Toast.LENGTH_SHORT).show();
-
-                    } catch (Exception e) {
-                        Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Upload thất bại: " + e.getMessage(), Toast.LENGTH_LONG).show()
-                );
     }
 
     private void toggleLikeAlbum() {
@@ -261,6 +217,7 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
         new Thread(() -> {
             boolean exists = ServiceLocator.getInstance().likedAlbumRepository.existsByUserIdAndAlbumId(userId, currentId);
+            final boolean willLike = !exists;
             if (exists) {
                 ServiceLocator.getInstance().likedAlbumRepository.deleteByUserIdAndAlbumId(userId, currentId);
             } else {
@@ -277,7 +234,14 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
                 ServiceLocator.getInstance().likedAlbumRepository.save(la);
             }
-            runOnUiThread(this::updateLikeButtonUI);
+            runOnUiThread(() -> {
+                updateLikeButtonUI();
+                Toast.makeText(
+                        this,
+                        willLike ? "Đã thêm album vào yêu thích" : "Đã xóa album khỏi yêu thích",
+                        Toast.LENGTH_SHORT
+                ).show();
+            });
         }).start();
     }
 
@@ -308,6 +272,9 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
 
         Intent intent = new Intent(this, MusicPlayerActivity.class);
         intent.putExtra("SONG_DATA", targetList.get(0));
+        intent.putExtra("QUEUE_LIST", new ArrayList<>(targetList));
+        intent.putExtra("AUTO_PLAY", true);
+        intent.putExtra("SHUFFLE_ENABLED", shuffle);
         startActivity(intent);
     }
 
@@ -400,6 +367,10 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
                 Album album = homeService.getAlbumById(currentId);
 
                 tvAlbumName.setText(album.getName());
+                if (tvPlaylistSubtitle != null) {
+                    String artistName = album.getArtist() != null ? album.getArtist().getName() : "Nghệ sĩ chưa cập nhật";
+                    tvPlaylistSubtitle.setText(artistName);
+                }
 
                 Glide.with(this)
                         .load(album.getImage())
@@ -407,11 +378,16 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
                         .error(R.drawable.ic_logo)
                         .into(imgAlbumArt);
 
+                updateAlbumMeta(album);
+
             } else {
 
                 Playlist playlist = playlistService.getPlaylistById(currentId);
 
                 tvAlbumName.setText(playlist.getName());
+                if (tvPlaylistSubtitle != null) {
+                    tvPlaylistSubtitle.setText("Playlist của bạn");
+                }
 
                 Glide.with(this)
                         .load(playlist.getImage())
@@ -444,7 +420,29 @@ public class PlaylistDetailActivity extends BaseMiniPlayerActivity {
     }
 
     private void updateMeta() {
+        if (tvSongCount == null) return;
+        if (isAlbum) {
+            return;
+        }
         tvSongCount.setText(songList.size() + " bài hát");
+    }
+
+    private void updateAlbumMeta(Album album) {
+        if (tvSongCount == null || album == null) return;
+
+        List<String> parts = new ArrayList<>();
+
+        if (album.getReleaseDate() != null) {
+            parts.add(String.valueOf(album.getReleaseDate().getYear()));
+        }
+
+        parts.add(songList.size() + " bài hát");
+
+        if (album.getPlayCount() > 0) {
+            parts.add(String.format(Locale.US, "%,d lượt nghe", album.getPlayCount()));
+        }
+
+        tvSongCount.setText(String.join(" • ", parts));
     }
 
     @Override
